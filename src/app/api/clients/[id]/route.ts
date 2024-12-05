@@ -20,13 +20,14 @@ const clientUpdateSchema = z.object({
 // GET: Obtener cliente por ID
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   try {
+    // Asegúrate de pasar `id` directamente como string.
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: id }, // Usa `id` directamente como string
+      where: { profile_id: id },
     });
 
     if (!client) {
@@ -49,9 +50,9 @@ export async function GET(
 // PUT: Actualizar cliente por ID
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   try {
     const body = await req.json();
@@ -94,9 +95,9 @@ export async function PUT(
 // DELETE: Eliminar cliente por ID
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   try {
     const client = await prisma.clientProfile.findUnique({
@@ -110,12 +111,10 @@ export async function DELETE(
       );
     }
 
-    // Eliminar el perfil del cliente
     await prisma.clientProfile.delete({
       where: { profile_id: id },
     });
 
-    // Eliminar el usuario asociado al cliente
     await prisma.user.delete({
       where: { id: client.user_id },
     });

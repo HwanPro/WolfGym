@@ -20,9 +20,9 @@ const clientUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = context.params.id;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -58,9 +58,9 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = context.params.id;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -122,9 +122,9 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = context.params.id;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(

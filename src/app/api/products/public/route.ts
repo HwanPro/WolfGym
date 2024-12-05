@@ -75,12 +75,13 @@ export async function POST(req: NextRequest) {
     });
 
     // Crear el registro de la compra (asumiendo que tienes un modelo Purchase)
+    const discount = product.item_discount || 0; // Usa 0 como valor por defecto
+
     const purchase = await prisma.purchase.create({
       data: {
         purchase_quantity: quantity,
         purchase_total:
-          (product.item_price - product.item_price * (product.item_discount / 100)) *
-          quantity,
+          (product.item_price - product.item_price * (discount / 100)) * quantity,
         customer: {
           connect: { id: customerId },
         },
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
         },
       },
     });
+    
 
     return NextResponse.json({ purchase }, { status: 201 });
   } catch (error) {

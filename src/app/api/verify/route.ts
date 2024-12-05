@@ -1,5 +1,7 @@
-import db from "@/libs/db";
-import { getEmailFromToken } from '@/utils/auth';
+//src/app/api/verify/route.ts
+
+import prisma from "@/libs/prisma";
+import { getEmailFromToken } from "@/utils/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
@@ -23,8 +25,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const user = await db.userAccount.update({
-      where: { user_email: email },
+    const user = await prisma.user.update({
+      where: { email },
       data: { isVerified: true },
     });
 

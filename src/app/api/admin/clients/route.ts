@@ -5,7 +5,7 @@ import prisma from '@/libs/prisma';
 
 export async function GET(request: Request) {
   try {
-    const clients = await prisma.client.findMany(); // Encapsula await en una función
+    const clients = await prisma.clientProfile.findMany(); // Cambia "client" a "clientProfile"
     return NextResponse.json(clients);
   } catch (error) {
     console.error('Error fetching clients:', error);
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const newClient = await prisma.client.create({ data });
+    const newClient = await prisma.clientProfile.create({ data }); // Cambia "client" a "clientProfile"
     return NextResponse.json(newClient);
   } catch (error) {
     console.error('Error creating client:', error);

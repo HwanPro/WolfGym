@@ -6,7 +6,6 @@ import prisma from "@/libs/prisma";
 import bcrypt from "bcrypt";
 import { NextAuthOptions } from "next-auth";
 
-// Define las opciones de autenticación fuera del scope de las exportaciones HTTP
 const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -20,31 +19,38 @@ const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
+      authorize: async (credentials) => {
+        if (!credentials?.email || !credentials?.password) {
           throw new Error("Credenciales inválidas");
         }
-
+      
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
-
+      
         if (!user) {
           throw new Error("Usuario no encontrado");
         }
-
+      
         const isMatch = await bcrypt.compare(credentials.password, user.password!);
-
+      
         if (!isMatch) {
           throw new Error("Contraseña incorrecta");
         }
-
+      
         if (!user.emailVerified) {
           throw new Error("Debes verificar tu correo electrónico antes de iniciar sesión");
         }
-
-        return user;
-      },
+      
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image, // Asegúrate de que estas propiedades existan
+          isVerified: user.emailVerified, // Agrega esta propiedad al tipo de usuario
+        };
+      }
     }),
   ],
   session: {
@@ -55,7 +61,7 @@ const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.emailVerified = !!user.emailVerified; // Convertir a booleano
+        token.emailVerified = !!user.isVerified;
       }
       return token;
     },
@@ -79,7 +85,7 @@ const authOptions: NextAuthOptions = {
             profile_last_name: user.name?.split(" ")[1] || "",
             profile_plan: "Básico",
             profile_start_date: new Date(),
-            profile_end_date: new Date(), // Ajusta según tu lógica
+            profile_end_date: new Date(),
             profile_phone: "",
             profile_emergency_phone: "",
             user_id: user.id,
@@ -97,7 +103,6 @@ const authOptions: NextAuthOptions = {
   useSecureCookies: process.env.NODE_ENV === "production",
 };
 
-// Exporta el handler HTTP utilizando las opciones de NextAuth
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

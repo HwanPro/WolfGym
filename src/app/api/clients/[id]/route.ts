@@ -20,13 +20,13 @@ const clientUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  context: { params: Record<string, string> }
+  context: { params: { id?: string } }
 ) {
-  const id = context.params.id;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
-      { error: "El ID del cliente es inválido" },
+      { error: "El ID del cliente es inválido o no está presente" },
       { status: 400 }
     );
   }
@@ -58,13 +58,13 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: Record<string, string> }
+  context: { params: { id?: string } }
 ) {
-  const id = context.params.id;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
-      { error: "El ID del cliente es inválido" },
+      { error: "El ID del cliente es inválido o no está presente" },
       { status: 400 }
     );
   }
@@ -122,13 +122,13 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Record<string, string> }
+  context: { params: { id?: string } }
 ) {
-  const id = context.params.id;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
-      { error: "El ID del cliente es inválido" },
+      { error: "El ID del cliente es inválido o no está presente" },
       { status: 400 }
     );
   }

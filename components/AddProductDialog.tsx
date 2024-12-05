@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 function AddProductDialog({
   onSave,
 }: {
-  onSave: (product: { name: string; price: number }) => void; // Reemplaza `any` con un tipo específico
+  onSave: (product: { name: string; price: number; description: string; stock: number; discount?: number; imageUrl: string }) => void; // Definición clara del tipo
 }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [discount, setDiscount] = useState("");
-  const [stock, setStock] = useState("");
+  const [name, setName] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [price, setPrice] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
+  const [stock, setStock] = useState<string>("");
   const [image, setImage] = useState<File | null>(null);
 
   const handleAddProduct = async () => {
@@ -39,7 +39,14 @@ function AddProductDialog({
 
       if (res.ok) {
         const data = await res.json();
-        onSave(data.product);
+        onSave({
+          name: data.product.item_name,
+          price: data.product.item_price,
+          description: data.product.item_description,
+          stock: data.product.item_stock,
+          discount: data.product.item_discount,
+          imageUrl: data.product.imageUrl,
+        });
         toast.success("Producto agregado exitosamente!");
         setName("");
         setDescription("");
@@ -111,3 +118,5 @@ function AddProductDialog({
     </div>
   );
 }
+
+export default AddProductDialog;

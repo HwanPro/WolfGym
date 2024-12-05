@@ -1,12 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/libs/prisma";
 import { z } from "zod";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 
-// Esquema de validación para actualización
+// Esquema de validación para la actualización de clientes
+const clientUpdateSchema = z.object({
+  firstName: z.string().min(1, "El nombre es obligatorio"),
+  lastName: z.string().min(1, "El apellido es obligatorio"),
+  plan: z.enum(["Básico", "Premium", "VIP"]),
+  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Fecha de inicio inválida",
+  }),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Fecha de fin inválida",
+  }),
+  phone: z.string(),
+  emergencyPhone: z.string(),
+});
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id?: string } }
+  { params }: { params: { id: string } }
 ) {
   const { id } = params;
 
@@ -18,8 +31,8 @@ export async function GET(
   }
 
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: Number(id) },
+    const client = await prisma.clientProfile.findUnique({
+      where: { profile_id: Number(id) },
     });
 
     if (!client) {
@@ -39,12 +52,11 @@ export async function GET(
   }
 }
 
-
 export async function PUT(
   req: NextRequest,
-  context: { params: { id?: string } }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -55,24 +67,11 @@ export async function PUT(
 
   try {
     const body = await req.json();
-    const clientUpdateSchema = z.object({
-      firstName: z.string().min(1, "El nombre es obligatorio"),
-      lastName: z.string().min(1, "El apellido es obligatorio"),
-      plan: z.enum(["Básico", "Premium", "VIP"]),
-      startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: "Fecha de inicio inválida",
-      }),
-      endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-        message: "Fecha de fin inválida",
-      }),
-      phone: z.string(),
-      emergencyPhone: z.string(),
-    });
 
-    // Validar datos con el esquema
+    // Validar los datos con el esquema definido
     const validatedData = clientUpdateSchema.parse(body);
 
-    // Actualizar cliente en la base de datos
+    // Actualizar el cliente en la base de datos
     const updatedClient = await prisma.clientProfile.update({
       where: { profile_id: Number(id) },
       data: {
@@ -95,7 +94,7 @@ export async function PUT(
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: error.errors[0].message },
+        { error: error.errors.map((e) => e.message).join(", ") },
         { status: 400 }
       );
     }
@@ -107,12 +106,11 @@ export async function PUT(
   }
 }
 
-
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id?: string } }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -133,6 +131,7 @@ export async function DELETE(
       );
     }
 
+    // Eliminar el perfil del cliente y su usuario relacionado
     await prisma.clientProfile.delete({
       where: { profile_id: Number(id) },
     });

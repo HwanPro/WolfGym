@@ -20,11 +20,11 @@ const clientUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string | undefined> }
 ) {
-  const id = parseInt(context.params.id, 10);
+  const id = context.params.id;
 
-  if (isNaN(id)) {
+  if (!id || isNaN(Number(id))) {
     return NextResponse.json(
       { error: "El ID del cliente es inválido" },
       { status: 400 }
@@ -33,7 +33,7 @@ export async function GET(
 
   try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: id },
+      where: { profile_id: Number(id) },
       include: {
         user: true,
       },
@@ -58,11 +58,11 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string | undefined> }
 ) {
-  const id = parseInt(context.params.id, 10);
+  const id = context.params.id;
 
-  if (isNaN(id)) {
+  if (!id || isNaN(Number(id))) {
     return NextResponse.json(
       { error: "El ID del cliente es inválido" },
       { status: 400 }
@@ -87,7 +87,7 @@ export async function PUT(
     }
 
     const updatedClient = await prisma.clientProfile.update({
-      where: { profile_id: id },
+      where: { profile_id: Number(id) },
       data: {
         profile_first_name: validatedData.firstName,
         profile_last_name: validatedData.lastName,
@@ -122,11 +122,11 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Record<string, string | undefined> }
 ) {
-  const id = parseInt(context.params.id, 10);
+  const id = context.params.id;
 
-  if (isNaN(id)) {
+  if (!id || isNaN(Number(id))) {
     return NextResponse.json(
       { error: "El ID del cliente es inválido" },
       { status: 400 }
@@ -135,7 +135,7 @@ export async function DELETE(
 
   try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: id },
+      where: { profile_id: Number(id) },
     });
 
     if (!client) {
@@ -146,7 +146,7 @@ export async function DELETE(
     }
 
     await prisma.clientProfile.delete({
-      where: { profile_id: id },
+      where: { profile_id: Number(id) },
     });
 
     await prisma.user.delete({

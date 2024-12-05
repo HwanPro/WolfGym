@@ -24,6 +24,7 @@ const authOptions: NextAuthOptions = {
           throw new Error("Credenciales inválidas");
         }
       
+        // Busca al usuario en la base de datos
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
@@ -32,23 +33,27 @@ const authOptions: NextAuthOptions = {
           throw new Error("Usuario no encontrado");
         }
       
+        // Verifica la contraseña
         const isMatch = await bcrypt.compare(credentials.password, user.password!);
       
         if (!isMatch) {
           throw new Error("Contraseña incorrecta");
         }
       
+        // Verifica si el correo está confirmado
         if (!user.emailVerified) {
           throw new Error("Debes verificar tu correo electrónico antes de iniciar sesión");
         }
       
+        // Retorna el usuario con las propiedades esperadas
         return {
           id: user.id,
           name: user.name,
           email: user.email,
+          image: user.image,
           role: user.role,
-          image: user.image, // Asegúrate de que estas propiedades existan
-          isVerified: user.emailVerified, // Agrega esta propiedad al tipo de usuario
+          emailVerified: user.emailVerified,
+          isVerified: user.isVerified, // Asegúrate de usar el nombre correcto según el modelo
         };
       }
     }),
@@ -61,7 +66,7 @@ const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.emailVerified = !!user.isVerified;
+        token.emailVerified = user.emailVerified as boolean; // Ahora se maneja correctamente
       }
       return token;
     },

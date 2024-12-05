@@ -12,11 +12,11 @@ model User {
   name           String?
   email          String?              @unique
   password       String?
-  emailVerified  DateTime?
+  emailVerified  Boolean  @default(false)
   image          String?
   role           String               @default("client")
   twoFASecret    String?
-  isVerified     Boolean              @default(false)
+  isVerified     Boolean  @default(false)
   memberships    UserMembershipPlan[]
   payments       PaymentRecord[]      @relation("UserPayments")
   contacts       UserContact[]        @relation("UserContacts")

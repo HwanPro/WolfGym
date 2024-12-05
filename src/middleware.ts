@@ -1,17 +1,26 @@
-// middleware.ts
+// src/middleware.ts
 
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
+  });
 
   console.log('Token obtenido en el middleware:', token);
 
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith('/api')) {
+  // Permitir el acceso a la API, páginas de autenticación y verificación de correo
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/verify-email') ||
+    pathname.startsWith('/auth')
+  ) {
     return NextResponse.next();
   }
 
@@ -33,7 +42,6 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
-
 
 export const config = {
   matcher: ['/client/:path*', '/admin/:path*'],

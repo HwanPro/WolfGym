@@ -8,22 +8,23 @@ datasource db {
 }
 
 model User {
-  id            String               @id @default(cuid())
-  name          String?
-  email         String?              @unique
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  role          String               @default("client")
-  twoFASecret   String?
-  isVerified    Boolean              @default(false)
-  memberships   UserMembershipPlan[]
-  payments      PaymentRecord[]      @relation("UserPayments")
-  contacts      UserContact[]        @relation("UserContacts")
-  profile       ClientProfile?
-  accounts      Account[]
-  sessions      Session[]
-  purchases     Purchase[] // Relación con Purchase
+  id             String               @id @default(cuid())
+  name           String?
+  email          String?              @unique
+  password       String?
+  emailVerified  DateTime?
+  image          String?
+  role           String               @default("client")
+  twoFASecret    String?
+  isVerified     Boolean              @default(false)
+  memberships    UserMembershipPlan[]
+  payments       PaymentRecord[]      @relation("UserPayments")
+  contacts       UserContact[]        @relation("UserContacts")
+  profile        ClientProfile?
+  accounts       Account[]
+  sessions       Session[]
+  purchases      Purchase[]           // Relación con Purchase
+  createdAt      DateTime             @default(now()) // Asegúrate de que este campo está presente
 }
 
 model MembershipPlan {
@@ -75,8 +76,9 @@ model ClientProfile {
   profile_phone           String
   profile_updated_at      DateTime @updatedAt
   user_id                 String   @unique
-  user                    User     @relation(fields: [user_id], references: [id])
+  user                    User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
+
 
 model InventoryItem {
   item_id          String     @id @default(uuid())

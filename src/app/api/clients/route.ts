@@ -1,61 +1,78 @@
 // src/app/api/clients/route.ts
 
-import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/libs/prisma";
-import { z } from "zod";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/libs/prisma';
+import { z } from 'zod';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/libs/authOptions'; // Importar desde el nuevo archivo
 
 // Esquema de validación con Zod
 const clientSchema = z.object({
-  firstName: z.string().min(1, "El nombre es obligatorio"),
-  lastName: z.string().min(1, "El apellido es obligatorio"),
-  plan: z.enum(["Básico", "Premium", "VIP"]),
+  firstName: z.string().min(1, 'El nombre es obligatorio'),
+  lastName: z.string().min(1, 'El apellido es obligatorio'),
+  plan: z.enum(['Básico', 'Premium', 'VIP']),
   startDate: z.string(),
   endDate: z.string(),
   phone: z.string(),
   emergencyPhone: z.string(),
-  email: z.string().email("Correo electrónico inválido"),
+  email: z.string().email('Correo electrónico inválido'),
 });
 
-export async function GET() {
+// Función GET
+export async function GET(request: NextRequest) {
   try {
+    // Verificar la sesión y el rol del usuario
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
+    }
+
+    // Obtener los clientes recientes (ejemplo: los últimos 10 clientes)
     const clients = await prisma.clientProfile.findMany({
+      take: 10,
+      orderBy: {
+        profile_start_date: 'desc',
+      },
       include: {
-        user: true,
+        user: true, // Para obtener el email y otros datos del usuario
       },
     });
-    return NextResponse.json(clients);
+
+    return NextResponse.json(clients, { status: 200 });
   } catch (error) {
-    console.error("Error al obtener clientes:", error);
+    console.error('Error al obtener los clientes:', error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { message: 'Error al obtener los clientes' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(req: NextRequest) {
+// Función POST
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     const validatedData = clientSchema.parse(body);
 
     // Validación de números de teléfono
-    const phoneNumber = parsePhoneNumberFromString(validatedData.phone, "PE");
+    const phoneNumber = parsePhoneNumberFromString(validatedData.phone, 'PE');
     const emergencyPhoneNumber = parsePhoneNumberFromString(
       validatedData.emergencyPhone,
-      "PE"
+      'PE'
     );
 
     if (!phoneNumber?.isValid()) {
       return NextResponse.json(
-        { error: "El número de teléfono no es válido" },
+        { error: 'El número de teléfono no es válido' },
         { status: 400 }
       );
     }
 
     if (!emergencyPhoneNumber?.isValid()) {
       return NextResponse.json(
-        { error: "El número de emergencia no es válido" },
+        { error: 'El número de emergencia no es válido' },
         { status: 400 }
       );
     }
@@ -65,7 +82,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: `${validatedData.firstName} ${validatedData.lastName}`,
         email: validatedData.email,
-        role: "client",
+        role: 'client',
       },
     });
 
@@ -79,9 +96,7 @@ export async function POST(req: NextRequest) {
         profile_end_date: new Date(validatedData.endDate),
         profile_phone: validatedData.phone,
         profile_emergency_phone: validatedData.emergencyPhone,
-        user: {
-          connect: { id: user.id },
-        },
+        user_id: user.id,
       },
     });
 
@@ -92,7 +107,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error("Error al guardar cliente:", error);
+    console.error('Error al guardar cliente:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -102,7 +117,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: "Error interno del servidor" },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

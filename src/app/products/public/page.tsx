@@ -1,10 +1,10 @@
-// src/app/products/public/page.tsx
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaShoppingCart, FaUserCircle, FaSearch } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import CulqiPaymentForm, { CulqiPaymentFormHandle } from "@/components/CulqiPaymentForm";
+import { Button } from "@/components/ui/button";
 
 type Product = {
   id: string;
@@ -26,15 +26,14 @@ export default function PublicProductList() {
   const [quantity, setQuantity] = useState(1);
   const [showCart, setShowCart] = useState(false);
   const router = useRouter();
+  const culqiRef = useRef<CulqiPaymentFormHandle>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products/public");
         if (!response.ok) {
-          const errorDetails = await response
-            .json()
-            .catch(() => ({ error: "Unknown error" }));
+          const errorDetails = await response.json().catch(() => ({ error: "Unknown error" }));
           console.error("API Error Details:", errorDetails);
           throw new Error(errorDetails.error || "Error al cargar datos");
         }
@@ -113,6 +112,29 @@ export default function PublicProductList() {
     );
   };
 
+  const handlePaymentSuccess = (charge: any) => {
+    alert("Pago realizado con éxito");
+    // Aquí puedes manejar la lógica post-pago, como actualizar el estado del usuario o limpiar el carrito
+    setCart([]);
+    setShowCart(false);
+  };
+
+  const handlePaymentError = (error: string) => {
+    alert(`Error en el pago: ${error}`);
+  };
+
+  // Obtener el email del usuario (implementa la lógica de autenticación si es necesario)
+  const userEmail = "cliente@example.com"; // Reemplaza esto con el email real del usuario
+
+  const pagarCompra = () => {
+    const totalAmount = calculateTotal() * 100; // Culqi espera el monto en centimos
+    culqiRef.current?.openCulqi({
+      amount: totalAmount,
+      description: "Compra de Productos",
+      email: userEmail,
+    });
+  };
+
   return (
     <div className="bg-white min-h-screen mx-auto">
       {/* Header */}
@@ -130,7 +152,7 @@ export default function PublicProductList() {
             />
           </div>
           <button
-            onClick={() => router.push("/")} // Botón para volver al inicio
+            onClick={() => router.push("/")}
             className="bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-500"
           >
             Volver al Inicio
@@ -185,7 +207,7 @@ export default function PublicProductList() {
             </p>
             {product.stock > 0 ? (
               <button
-                onClick={() => setSelectedProduct(product)} // Establecer el producto seleccionado
+                onClick={() => setSelectedProduct(product)}
                 className="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-500"
               >
                 Seleccionar Opciones
@@ -199,11 +221,11 @@ export default function PublicProductList() {
               </button>
             )}
 
-            {/* Mostrar modal de opciones si el producto está seleccionado */}
+            {/* Modal de Opciones de Producto */}
             {selectedProduct?.id === product.id && (
               <div className="absolute inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center rounded-lg shadow-lg text-black">
                 <button
-                  onClick={() => setSelectedProduct(null)} // Cerrar modal
+                  onClick={() => setSelectedProduct(null)}
                   className="absolute top-2 right-2 text-black font-bold"
                 >
                   X
@@ -224,16 +246,22 @@ export default function PublicProductList() {
                     +
                   </button>
                 </div>
-                <button
-                  onClick={() => {
-                    handleAddToCart(product); // Agregar al carrito
-                    setSelectedProduct(null); // Cerrar modal después de agregar
-                    setQuantity(1); // Reiniciar la cantidad
-                  }}
+                <Button
                   className="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-500"
+                  onClick={() => {
+                    handleAddToCart(product);
+                    culqiRef.current?.openCulqi({
+                      amount: (
+                        (product.price - (product.price * (product.discount || 0)) / 100) *
+                        quantity
+                      ).toFixed(0) as unknown as number,
+                      description: `Compra de ${product.name}`,
+                      email: userEmail,
+                    });
+                  }}
                 >
                   Agregar al carrito
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -258,10 +286,7 @@ export default function PublicProductList() {
             </button>
             <h2 className="text-lg font-bold mb-4 text-black">Carrito</h2>
             {cart.map((item, index) => (
-              <div
-                key={index}
-                className="flex justify-between items-center mb-2"
-              >
+              <div key={index} className="flex justify-between items-center mb-2">
                 <img
                   src={item.imageUrl || "/placeholder-image.png"}
                   alt={item.name}
@@ -290,13 +315,19 @@ export default function PublicProductList() {
               <p className="text-lg font-bold text-black">
                 Total: S/. {calculateTotal().toFixed(2)}
               </p>
-              <button className="mt-4 bg-yellow-400 text-black px-4 py-2 w-full rounded-full hover:bg-yellow-500">
-                Pagar
-              </button>
+              <Button
+                className="mt-4 bg-yellow-400 text-black px-4 py-2 w-full rounded-full hover:bg-yellow-500"
+                onClick={pagarCompra}
+              >
+                Pagar Carrito
+              </Button>
             </div>
           </div>
         </div>
       )}
+
+      {/* Componente CulqiPaymentForm */}
+      <CulqiPaymentForm ref={culqiRef} onSuccess={handlePaymentSuccess} onError={handlePaymentError} />
     </div>
   );
 }

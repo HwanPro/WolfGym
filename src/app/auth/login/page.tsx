@@ -1,10 +1,11 @@
-// app/login/page.tsx
-"use client";
-import { useForm } from "react-hook-form";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import Image from "next/image";
+// /app/auth/login/page.tsx
+
+'use client';
+import { useForm } from 'react-hook-form';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Image from 'next/image';
 
 export default function AuthPage() {
   const router = useRouter();
@@ -19,24 +20,24 @@ export default function AuthPage() {
 
   // Función para manejar el inicio de sesión
   const handleLogin = async (data) => {
-    const res = await signIn("credentials", {
+    const res = await signIn('credentials', {
       redirect: false,
       email: data.email,
       password: data.password,
-      callbackUrl: "/",
+      callbackUrl: '/client/dashboard', // Redirigir al dashboard del cliente
     });
 
     if (res?.error) {
-      setError("Error al iniciar sesión");
+      setError(res.error);
     } else {
-      router.push("/");
+      router.push(res?.url || '/client/dashboard');
     }
   };
 
   // Función para manejar el inicio de sesión con Google
   const handleGoogleLogin = () => {
-    signIn("google", { callbackUrl: "/" }).catch(() =>
-      setError("Error al iniciar sesión con Google")
+    signIn('google', { callbackUrl: '/client/dashboard' }).catch(() =>
+      setError('Error al iniciar sesión con Google')
     );
   };
 
@@ -62,8 +63,8 @@ export default function AuthPage() {
         </label>
         <input
           type="email"
-          {...register("email", {
-            required: { value: true, message: "Email es obligatorio" },
+          {...register('email', {
+            required: { value: true, message: 'Email es obligatorio' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="user@email.com"
@@ -82,8 +83,8 @@ export default function AuthPage() {
         </label>
         <input
           type="password"
-          {...register("password", {
-            required: { value: true, message: "Contraseña es obligatoria" },
+          {...register('password', {
+            required: { value: true, message: 'Contraseña es obligatoria' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="******"
@@ -102,9 +103,9 @@ export default function AuthPage() {
           <a
             href="#"
             className="text-black"
-            onClick={() => router.push("/auth/register")}
+            onClick={() => router.push('/auth/register')}
           >
-            ¿No tienes cuenta?{" "}
+            ¿No tienes cuenta?{' '}
             <span className="text-yellow-500">Regístrate</span>
           </a>
         </div>

@@ -1,16 +1,15 @@
-// app/register/page.tsx
-"use client";
-import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+// /app/auth/register/page.tsx
 
-// Define el tipo para los datos del formulario
+'use client';
+import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 type RegisterData = {
   username: string;
   email: string;
   password: string;
   confirmPassword: string;
-  role?: string; // Permitir enviar el rol si es necesario
 };
 
 function RegisterPage() {
@@ -20,35 +19,34 @@ function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterData>();
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const onSubmit = handleSubmit(async (data) => {
     if (data.password !== data.confirmPassword) {
-      return setError("Las contraseñas no coinciden");
+      return setError('Las contraseñas no coinciden');
     }
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
         body: JSON.stringify({
           username: data.username,
           email: data.email,
           password: data.password,
-          role: data.role || "client", // Asignar un rol si no se especifica
         }),
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       if (res.ok) {
-        router.push("/auth/login");
+        router.push('/auth/login');
       } else {
         const result = await res.json();
-        setError(result.message || "Error en el registro, por favor inténtalo de nuevo");
+        setError(result.message || 'Error en el registro, por favor inténtalo de nuevo');
       }
     } catch {
-      setError("Error en el registro, por favor inténtalo de nuevo");
+      setError('Error en el registro, por favor inténtalo de nuevo');
     }
   });
 
@@ -59,51 +57,63 @@ function RegisterPage() {
 
         <h1 className="text-black text-2xl font-bold text-center mb-6">Registro</h1>
 
-        <label htmlFor="username" className="text-slate-500 mb-2 block text-sm">Nombre de usuario:</label>
+        <label htmlFor="username" className="text-slate-500 mb-2 block text-sm">
+          Nombre de usuario:
+        </label>
         <input
           type="text"
-          {...register("username", {
-            required: { value: true, message: "El nombre de usuario es obligatorio" },
+          {...register('username', {
+            required: { value: true, message: 'El nombre de usuario es obligatorio' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="Nombre de usuario"
         />
         {errors.username && <span className="text-red-500 text-xs">{errors.username.message}</span>}
 
-        <label htmlFor="email" className="text-slate-500 mb-2 block text-sm">Correo electrónico:</label>
+        <label htmlFor="email" className="text-slate-500 mb-2 block text-sm">
+          Correo electrónico:
+        </label>
         <input
           type="email"
-          {...register("email", {
-            required: { value: true, message: "El correo electrónico es obligatorio" },
+          {...register('email', {
+            required: { value: true, message: 'El correo electrónico es obligatorio' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="Tu correo"
         />
         {errors.email && <span className="text-red-500 text-xs">{errors.email.message}</span>}
 
-        <label htmlFor="password" className="text-slate-500 mb-2 block text-sm">Contraseña:</label>
+        <label htmlFor="password" className="text-slate-500 mb-2 block text-sm">
+          Contraseña:
+        </label>
         <input
           type="password"
-          {...register("password", {
-            required: { value: true, message: "La contraseña es obligatoria" },
+          {...register('password', {
+            required: { value: true, message: 'La contraseña es obligatoria' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="Contraseña"
         />
         {errors.password && <span className="text-red-500 text-xs">{errors.password.message}</span>}
 
-        <label htmlFor="confirmPassword" className="text-slate-500 mb-2 block text-sm">Confirmar contraseña:</label>
+        <label htmlFor="confirmPassword" className="text-slate-500 mb-2 block text-sm">
+          Confirmar contraseña:
+        </label>
         <input
           type="password"
-          {...register("confirmPassword", {
-            required: { value: true, message: "Es obligatorio confirmar la contraseña" },
+          {...register('confirmPassword', {
+            required: { value: true, message: 'Es obligatorio confirmar la contraseña' },
           })}
           className="border p-2 w-full mb-4 text-gray-800"
           placeholder="Confirmar contraseña"
         />
-        {errors.confirmPassword && <span className="text-red-500 text-xs">{errors.confirmPassword.message}</span>}
+        {errors.confirmPassword && (
+          <span className="text-red-500 text-xs">{errors.confirmPassword.message}</span>
+        )}
 
-        <button className="w-full bg-yellow-400 text-black hover:bg-yellow-500 p-2 mb-4">Registrar</button>
+        <button className="w-full bg-yellow-400 text-black hover:bg-yellow-500 p-2 mb-4">
+          Registrar
+        </button>
       </form>
     </div>
   );

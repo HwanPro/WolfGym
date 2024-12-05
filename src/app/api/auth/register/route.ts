@@ -1,10 +1,10 @@
-// app/api/auth/register/route.ts
+// /app/api/auth/register/route.ts
 
-import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
-import prisma from "@/libs/prisma";
-import { sendVerificationEmail } from "@/libs/mail";
-import { generateVerificationToken } from "@/utils/auth";
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcrypt';
+import prisma from '@/libs/prisma';
+import { sendVerificationEmail } from '@/libs/mail';
+import { generateVerificationToken } from '@/utils/auth';
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     if (!username || !email || !password) {
       return NextResponse.json(
-        { message: "Todos los campos son obligatorios" },
+        { message: 'Todos los campos son obligatorios' },
         { status: 400 }
       );
     }
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "El correo ya está registrado" },
+        { message: 'El correo ya está registrado' },
         { status: 400 }
       );
     }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         name: username,
         email,
         password: hashedPassword,
-        role: "client",
+        role: 'client',
       },
     });
 
@@ -43,12 +43,12 @@ export async function POST(req: Request) {
     await prisma.clientProfile.create({
       data: {
         profile_first_name: username,
-        profile_last_name: "",
-        profile_plan: "Básico",
+        profile_last_name: '',
+        profile_plan: 'Básico',
         profile_start_date: new Date(),
         profile_end_date: new Date(), // Ajusta la fecha según tu lógica
-        profile_phone: "",
-        profile_emergency_phone: "",
+        profile_phone: '',
+        profile_emergency_phone: '',
         user_id: user.id,
       },
     });
@@ -69,14 +69,14 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         message:
-          "Usuario registrado con éxito. Revisa tu correo para verificar la cuenta.",
+          'Usuario registrado con éxito. Revisa tu correo para verificar la cuenta.',
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Error al registrar el usuario:", error);
+    console.error('Error al registrar el usuario:', error);
     return NextResponse.json(
-      { message: "Error al registrar el usuario" },
+      { message: 'Error al registrar el usuario' },
       { status: 500 }
     );
   }

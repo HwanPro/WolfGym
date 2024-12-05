@@ -20,7 +20,7 @@ import { Home, Bell } from "lucide-react";
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Estado para controlar la visibilidad del menú de notificaciones
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -32,21 +32,68 @@ export default function AdminDashboard() {
     productSales: 0,
     classAttendance: 0,
   });
-  const [products, setProducts] = useState([]);
-  const [recentClients, setRecentClients] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [recentClients, setRecentClients] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      // Fetch data for the dashboard
+    
     };
 
     const fetchProducts = async () => {
-      // Fetch products data
+      try {
+        const response = await fetch("/api/products", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Error al obtener los productos");
+        }
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast.error("Error al obtener los productos");
+      }
     };
 
     const fetchRecentClients = async () => {
-      // Fetch recent clients data
-      // Additionally, calculate days remaining for subscription and set notifications
+      try {
+        const response = await fetch("/api/clients", {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Error al obtener los clientes recientes");
+        }
+        const data = await response.json();
+
+        // Procesar datos de clientes y calcular días restantes
+        const processedClients = data.map((client: any) => {
+          const membershipStart = new Date(client.profile_start_date);
+          const membershipEnd = new Date(client.profile_end_date);
+          const today = new Date();
+          const timeDiff = membershipEnd.getTime() - today.getTime();
+          const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          return {
+            id: client.profile_id,
+            name: client.profile_first_name,
+            lastName: client.profile_last_name,
+            plan: client.profile_plan,
+            membershipStartFormatted: membershipStart.toLocaleDateString("es-ES"),
+            membershipEndFormatted: membershipEnd.toLocaleDateString("es-ES"),
+            daysRemaining,
+            email: client.user.email,
+          };
+        });
+
+        setRecentClients(processedClients);
+
+        // Calcular notificaciones
+        calculateNotifications(processedClients);
+      } catch (error) {
+        console.error("Error fetching recent clients:", error);
+        toast.error("Error al obtener los clientes recientes");
+      }
     };
 
     fetchDashboardData();
@@ -60,7 +107,7 @@ export default function AdminDashboard() {
   };
 
   // Función para calcular notificaciones basadas en los días restantes
-  const calculateNotifications = (clients) => {
+  const calculateNotifications = (clients: any[]) => {
     const notificationsList = clients
       .filter(
         (client) =>
@@ -169,12 +216,14 @@ export default function AdminDashboard() {
         Panel de Administración
       </h1>
 
-      {/* Dashboard Summary */}
+      {/* Resumen del Dashboard */}
       <section className="mb-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white text-black rounded-md shadow p-4">
             <p className="text-sm font-medium">Ingresos Totales</p>
-            <h3 className="text-2xl font-bold">${dashboardData.totalIncome}</h3>
+            <h3 className="text-2xl font-bold">
+              S/. {dashboardData.totalIncome}
+            </h3>
           </div>
           <div className="bg-white text-black rounded-md shadow p-4">
             <p className="text-sm font-medium">Nuevos Clientes</p>
@@ -182,7 +231,9 @@ export default function AdminDashboard() {
           </div>
           <div className="bg-white text-black rounded-md shadow p-4">
             <p className="text-sm font-medium">Ventas de Productos</p>
-            <h3 className="text-2xl font-bold">{dashboardData.productSales}</h3>
+            <h3 className="text-2xl font-bold">
+              {dashboardData.productSales}
+            </h3>
           </div>
           <div className="bg-white text-black rounded-md shadow p-4">
             <p className="text-sm font-medium">Asistencia a Clases</p>
@@ -193,7 +244,7 @@ export default function AdminDashboard() {
         </div>
       </section>
 
-      {/* Recent Clients */}
+      {/* Clientes Recientes */}
       <section className="mb-10">
         <h2 className="text-2xl font-bold text-yellow-400">
           Clientes Recientes
@@ -230,7 +281,7 @@ export default function AdminDashboard() {
         </Table>
       </section>
 
-      {/* Products */}
+      {/* Productos */}
       <section>
         <h2 className="text-2xl font-bold text-yellow-400">
           Gestión de Productos
@@ -245,9 +296,9 @@ export default function AdminDashboard() {
           <TableBody>
             {products.length > 0 ? (
               products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>{product.name}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
+                <TableRow key={product.item_id}>
+                  <TableCell>{product.item_name}</TableCell>
+                  <TableCell>{product.item_stock}</TableCell>
                 </TableRow>
               ))
             ) : (

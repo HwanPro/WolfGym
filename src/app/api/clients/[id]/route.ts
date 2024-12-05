@@ -20,7 +20,7 @@ const clientUpdateSchema = z.object({
 // GET: Obtener cliente por ID
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } } // Ajustado: id ahora es requerido
+  context: { params: { id: string } }
 ) {
   const { id } = context.params;
 
@@ -110,10 +110,12 @@ export async function DELETE(
       );
     }
 
+    // Eliminar el perfil del cliente
     await prisma.clientProfile.delete({
       where: { profile_id: id },
     });
 
+    // Eliminar el usuario asociado al cliente
     await prisma.user.delete({
       where: { id: client.user_id },
     });

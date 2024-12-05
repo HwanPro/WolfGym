@@ -4,25 +4,11 @@ import { z } from "zod";
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 // Esquema de validación para actualización
-const clientUpdateSchema = z.object({
-  firstName: z.string().min(1, "El nombre es obligatorio"),
-  lastName: z.string().min(1, "El apellido es obligatorio"),
-  plan: z.enum(["Básico", "Premium", "VIP"]),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: "Fecha de inicio inválida",
-  }),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
-    message: "Fecha de fin inválida",
-  }),
-  phone: z.string(),
-  emergencyPhone: z.string(),
-});
-
 export async function GET(
   req: NextRequest,
-  context: { params: { id?: string } }
+  { params }: { params: { id?: string } }
 ) {
-  const { id } = context.params;
+  const { id } = params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -32,11 +18,8 @@ export async function GET(
   }
 
   try {
-    const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: Number(id) },
-      include: {
-        user: true,
-      },
+    const client = await prisma.client.findUnique({
+      where: { id: Number(id) },
     });
 
     if (!client) {
@@ -56,6 +39,7 @@ export async function GET(
   }
 }
 
+
 export async function PUT(
   req: NextRequest,
   context: { params: { id?: string } }
@@ -71,21 +55,24 @@ export async function PUT(
 
   try {
     const body = await req.json();
+    const clientUpdateSchema = z.object({
+      firstName: z.string().min(1, "El nombre es obligatorio"),
+      lastName: z.string().min(1, "El apellido es obligatorio"),
+      plan: z.enum(["Básico", "Premium", "VIP"]),
+      startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Fecha de inicio inválida",
+      }),
+      endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+        message: "Fecha de fin inválida",
+      }),
+      phone: z.string(),
+      emergencyPhone: z.string(),
+    });
+
+    // Validar datos con el esquema
     const validatedData = clientUpdateSchema.parse(body);
 
-    const phoneNumber = parsePhoneNumberFromString(validatedData.phone, "PE");
-    const emergencyPhoneNumber = parsePhoneNumberFromString(
-      validatedData.emergencyPhone,
-      "PE"
-    );
-
-    if (!phoneNumber?.isValid() || !emergencyPhoneNumber?.isValid()) {
-      return NextResponse.json(
-        { error: "Los números de teléfono no son válidos" },
-        { status: 400 }
-      );
-    }
-
+    // Actualizar cliente en la base de datos
     const updatedClient = await prisma.clientProfile.update({
       where: { profile_id: Number(id) },
       data: {
@@ -119,6 +106,7 @@ export async function PUT(
     );
   }
 }
+
 
 export async function DELETE(
   req: NextRequest,

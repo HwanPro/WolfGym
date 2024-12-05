@@ -1,8 +1,20 @@
-// ./src/components/CulqiPaymentForm.tsx
-
 "use client";
 
 import React, { useEffect, useImperativeHandle, forwardRef } from "react";
+
+type PaymentData = {
+  amount: number;
+  description: string;
+  email: string;
+};
+
+type CulqiToken = {
+  id: string;
+  email: string;
+  card_number: string;
+  amount: number;
+  currency_code: string;
+};
 
 type CulqiPaymentFormProps = {
   onSuccess: (charge: any) => void;
@@ -10,48 +22,51 @@ type CulqiPaymentFormProps = {
 };
 
 export type CulqiPaymentFormHandle = {
-  openCulqi: (paymentData: { amount: number; description: string; email: string }) => void;
+  openCulqi: (paymentData: PaymentData) => void;
 };
 
 const CulqiPaymentForm = forwardRef<CulqiPaymentFormHandle, CulqiPaymentFormProps>(
   ({ onSuccess, onError }, ref) => {
     useEffect(() => {
-      // Cargar el script de Culqi cuando el componente se monta
+      // Cargar el script de Culqi
       const script = document.createElement("script");
       script.src = "https://checkout.culqi.com/js/v3";
       script.async = true;
+
       script.onload = () => {
-        console.log("Culqi script loaded");
+        console.log("Culqi script cargado.");
       };
+
       script.onerror = () => {
-        console.error("Error loading Culqi script");
+        console.error("Error al cargar el script de Culqi.");
       };
+
       document.body.appendChild(script);
 
-      // Limpiar el script cuando el componente se desmonta
+      // Limpiar el script al desmontar
       return () => {
         document.body.removeChild(script);
       };
     }, []);
 
-    const openCulqi = (paymentData: { amount: number; description: string; email: string }) => {
+    const openCulqi = (paymentData: PaymentData) => {
       const { amount, description, email } = paymentData;
 
       if (!window.Culqi) {
-        alert("Culqi no está cargado correctamente.");
+        onError("Culqi no está cargado correctamente.");
         return;
       }
 
-      // Configurar la clave pública de Culqi
-      window.Culqi.publicKey = process.env.NEXT_PUBLIC_CULQI_PUBLIC_KEY;
+      // Configurar clave pública
+      window.Culqi.publicKey = process.env.NEXT_PUBLIC_CULQI_PUBLIC_KEY || "";
 
-      // Abrir el formulario de pago de Culqi
+      // Abrir formulario de pago
       window.Culqi.open({
         title: "Wolf Gym",
         currency: "PEN",
-        description: description || "Pago de Membresía",
-        amount: amount, // Monto en centimos, por ejemplo: S/. 60.00 = 6000
-        email: email,
+        description,
+        amount, // Monto en céntimos (ej. S/. 60.00 = 6000)
+        email,
       });
     };
 
@@ -60,55 +75,56 @@ const CulqiPaymentForm = forwardRef<CulqiPaymentFormHandle, CulqiPaymentFormProp
     }));
 
     useEffect(() => {
-      if (window.Culqi) {
-        // Manejar el evento de Culqi después de que el usuario completa el formulario de pago
-        const onCulqi = async (event: any) => {
-          const token = event.detail;
+      const handleCulqiEvent = async () => {
+        const token: CulqiToken = window.Culqi.token;
 
-          if (token.error) {
-            onError(token.error.message);
+        if (!token || token.error) {
+          onError(token?.error?.message || "Error al generar el token.");
+          return;
+        }
+
+        // Procesar el pago
+        try {
+          const response = await fetch("/api/culqi/charge", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token,
+              amount: token.amount,
+              currency: "PEN",
+              description: token.card_number,
+              email: token.email,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            onSuccess(data.charge);
           } else {
-            const { amount, description, email } = token;
-
-            // Enviar el token al servidor para procesar el pago
-            try {
-              const response = await fetch("/api/culqi/charge", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  token,
-                  amount,
-                  currency: "PEN",
-                  description: description || "Pago de Membresía",
-                  email: email,
-                }),
-              });
-
-              const data = await response.json();
-              if (data.success) {
-                onSuccess(data.charge);
-              } else {
-                onError(data.message || "Error procesando el pago.");
-              }
-            } catch (error: any) {
-              console.error("Error al procesar el pago:", error);
-              onError(error.message || "Error al procesar el pago.");
-            }
+            onError(data.message || "Error procesando el pago.");
           }
-        };
+        } catch (err) {
+          console.error("Error al procesar el pago:", err);
+          onError("Error al procesar el pago.");
+        }
+      };
 
-        window.addEventListener("culqi", onCulqi);
-
-        // Limpiar el event listener cuando el componente se desmonta
-        return () => {
-          window.removeEventListener("culqi", onCulqi);
-        };
+      if (window.Culqi) {
+        window.addEventListener("culqi", handleCulqiEvent);
       }
+
+      // Cleanup del evento
+      return () => {
+        if (window.Culqi) {
+          window.removeEventListener("culqi", handleCulqiEvent);
+        }
+      };
     }, [onError, onSuccess]);
 
-    return null; // No renderizar nada
+    return null; // No renderiza elementos visuales
   }
 );
 

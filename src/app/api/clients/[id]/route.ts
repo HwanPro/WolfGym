@@ -1,5 +1,3 @@
-// src/app/api/clients/[id]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/libs/prisma";
 import { z } from "zod";
@@ -22,18 +20,20 @@ const clientUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es obligatorio" },
-        { status: 400 }
-      );
-    }
+  const { id } = context.params;
 
+  if (!id) {
+    return NextResponse.json(
+      { error: "El ID del cliente es obligatorio" },
+      { status: 400 }
+    );
+  }
+
+  try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: params.id },
+      where: { profile_id: parseInt(id) },
       include: {
         user: true,
       },
@@ -58,16 +58,18 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es obligatorio" },
-        { status: 400 }
-      );
-    }
+  const { id } = context.params;
 
+  if (!id) {
+    return NextResponse.json(
+      { error: "El ID del cliente es obligatorio" },
+      { status: 400 }
+    );
+  }
+
+  try {
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
 
@@ -93,7 +95,7 @@ export async function PUT(
     }
 
     const updatedClient = await prisma.clientProfile.update({
-      where: { profile_id: params.id },
+      where: { profile_id: parseInt(id) },
       data: {
         profile_first_name: validatedData.firstName,
         profile_last_name: validatedData.lastName,
@@ -128,18 +130,20 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
-  try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es obligatorio" },
-        { status: 400 }
-      );
-    }
+  const { id } = context.params;
 
+  if (!id) {
+    return NextResponse.json(
+      { error: "El ID del cliente es obligatorio" },
+      { status: 400 }
+    );
+  }
+
+  try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: params.id },
+      where: { profile_id: parseInt(id) },
     });
 
     if (!client) {
@@ -151,7 +155,7 @@ export async function DELETE(
 
     // Eliminar el perfil del cliente
     await prisma.clientProfile.delete({
-      where: { profile_id: params.id },
+      where: { profile_id: parseInt(id) },
     });
 
     // Opcional: Eliminar el usuario asociado

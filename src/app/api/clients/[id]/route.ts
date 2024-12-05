@@ -18,16 +18,10 @@ const clientUpdateSchema = z.object({
 });
 
 // GET: Obtener cliente por ID
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    // Asegúrate de pasar `id` directamente como string.
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: id },
+      where: { profile_id: params.id },
     });
 
     if (!client) {
@@ -48,18 +42,13 @@ export async function GET(
 }
 
 // PUT: Actualizar cliente por ID
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-
+export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
 
     const updatedClient = await prisma.clientProfile.update({
-      where: { profile_id: id },
+      where: { profile_id: params.id },
       data: {
         profile_first_name: validatedData.firstName,
         profile_last_name: validatedData.lastName,
@@ -93,15 +82,10 @@ export async function PUT(
 }
 
 // DELETE: Eliminar cliente por ID
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
-
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: id },
+      where: { profile_id: params.id },
     });
 
     if (!client) {
@@ -112,7 +96,7 @@ export async function DELETE(
     }
 
     await prisma.clientProfile.delete({
-      where: { profile_id: id },
+      where: { profile_id: params.id },
     });
 
     await prisma.user.delete({

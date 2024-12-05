@@ -5,10 +5,10 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Button } from "@/components/ui/button";
 
-export default function AddProductDialog({
+function AddProductDialog({
   onSave,
 }: {
-  onSave: (product: any) => void;
+  onSave: (product: { name: string; price: number }) => void; // Reemplaza `any` con un tipo específico
 }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");

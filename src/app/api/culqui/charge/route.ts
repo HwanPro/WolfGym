@@ -25,7 +25,8 @@ export async function POST(request: Request) {
   }
 
   if (!process.env.CULQI_SECRET_KEY) {
-    console.error("CULQI_SECRET_KEY no está definido en las variables de entorno.");
+    return NextResponse.json({ success: false, message: "Pasarela de pago deshabilitada temporalmente." });
+  }  
     return NextResponse.json(
       { success: false, message: "Error interno del servidor" },
       { status: 500 }

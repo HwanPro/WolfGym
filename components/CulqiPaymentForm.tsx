@@ -8,13 +8,15 @@ type PaymentData = {
   email: string;
 };
 
-type CulqiToken = {
+type CulqiEventDetail = {
   id: string;
   email: string;
-  card_number: string;
   amount: number;
-  currency_code: string;
+  currency: string;
+  description: string;
+  error?: { message: string };
 };
+;
 
 type CulqiPaymentFormProps = {
   onSuccess: (charge: any) => void;

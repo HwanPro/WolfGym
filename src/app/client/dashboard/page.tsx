@@ -1,0 +1,227 @@
+// src/app/client/dashboard/page.tsx
+
+"use client";
+
+import { useSession, signOut } from "next-auth/react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+
+export default function ClientDashboard() {
+  const { data: session } = useSession();
+  const [clientData, setClientData] = useState(null);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [suggestedProducts, setSuggestedProducts] = useState([]);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    // Función para obtener los datos del cliente
+    const fetchClientData = async () => {
+      try {
+        const response = await fetch("/api/clients/me");
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        setClientData(data);
+      } catch (error) {
+        console.error("Error fetching client data:", error);
+      }
+    };
+
+    fetchClientData();
+  }, []);
+
+  useEffect(() => {
+    // Función para obtener los productos sugeridos
+    const fetchSuggestedProducts = async () => {
+      try {
+        const response = await fetch("/api/products/public");
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+        const data = await response.json();
+
+        // Mapear los datos correctamente
+        const formattedProducts = data.map((product: any) => ({
+          item_id: product.item_id,
+          item_name: product.item_name,
+          item_description: product.item_description,
+          item_price: product.item_price,
+          item_image_url: product.item_image_url || "/placeholder-image.png",
+        }));
+
+        setSuggestedProducts(formattedProducts.slice(0, 5)); // Muestra 5 productos sugeridos
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    };
+
+    fetchSuggestedProducts();
+  }, []);
+
+  // Cerrar el menú al hacer clic fuera o presionar Escape
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target) &&
+        !event.target.closest(".profile-button")
+      ) {
+        setShowProfileMenu(false);
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setShowProfileMenu(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  return (
+    <div className="p-6 bg-black min-h-screen text-white relative">
+      {/* Header */}
+      <div className="flex justify-between items-center p-4 border-b border-gray-200 bg-black">
+        <h1 className="text-xl font-bold text-yellow-400">Mi Panel</h1>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="relative profile-button"
+          >
+            <img
+              src={
+                session?.user?.image ||
+                "/default-avatar.png"
+              }
+              alt="Avatar"
+              className="h-8 w-8 rounded-full object-cover"
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Perfil emergente */}
+      {showProfileMenu && (
+        <div
+          ref={profileMenuRef}
+          className="fixed top-16 right-4 bg-white text-black p-4 rounded shadow-lg z-50"
+        >
+          <h2 className="text-lg font-bold mb-2">Mi Perfil</h2>
+          <p>
+            <strong>Nombre:</strong> {session?.user?.name || "N/A"}
+          </p>
+          <p>
+            <strong>Email:</strong> {session?.user?.email || "N/A"}
+          </p>
+          <div className="flex justify-between gap-4 mt-4">
+            <button
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+              onClick={handleSignOut}
+            >
+              Cerrar Sesión
+            </button>
+            <button
+              className="bg-gray-300 text-black px-3 py-1 rounded hover:bg-gray-400"
+              onClick={() => setShowProfileMenu(false)}
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Contenido */}
+      <h1 className="text-3xl font-bold mb-6 text-yellow-400">
+        Bienvenido,{" "}
+        {clientData?.profile_first_name || session?.user?.name || "Cliente"}
+      </h1>
+
+      {/* Mostrar sus suscripciones */}
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold text-yellow-400">Mi Suscripción</h2>
+        <p>Plan: {clientData?.profile_plan || "Sin plan"}</p>
+        <p>
+          Fecha de inicio:{" "}
+          {clientData?.profile_start_date
+            ? new Date(clientData.profile_start_date).toLocaleDateString(
+                "es-ES"
+              )
+            : "N/A"}
+        </p>
+        <p>
+          Fecha de fin:{" "}
+          {clientData?.profile_end_date
+            ? new Date(clientData.profile_end_date).toLocaleDateString("es-ES")
+            : "N/A"}
+        </p>
+      </section>
+
+      {/* Opciones adicionales */}
+      <section className="mb-10">
+        <h2 className="text-2xl font-bold text-yellow-400">Opciones</h2>
+        <div className="flex gap-4">
+          <Link
+            href="/client/reservar-clase"
+            className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+          >
+            Reservar Clase (Próximamente)
+          </Link>
+          <Link
+            href="/products/public"
+            className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+          >
+            Ver Productos
+          </Link>
+        </div>
+      </section>
+
+      {/* Productos sugeridos */}
+      <section>
+        <h2 className="text-2xl font-bold text-yellow-400">
+          Productos Sugeridos
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {suggestedProducts.map((product) => (
+            <div
+              key={product.item_id}
+              className="bg-white rounded-lg shadow-lg p-4 flex flex-col items-center text-center"
+            >
+              <img
+                src={product.item_image_url || "/placeholder-image.png"}
+                alt={product.item_name || "Producto"}
+                className="h-20 w-20 object-contain mb-4"
+              />
+              <h3 className="text-sm font-bold text-black">
+                {product.item_name}
+              </h3>
+              <p className="text-xs text-gray-500">
+                {product.item_description}
+              </p>
+              <p className="text-yellow-400 font-bold">
+                S/. {product.item_price.toFixed(2)}
+              </p>
+              <button className="mt-2 bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500">
+                Comprar
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

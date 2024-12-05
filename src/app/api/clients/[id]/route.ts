@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/libs/prisma";
 import { z } from "zod";
 
-// Esquema de validación para la actualización de clientes
+// Esquema de validación para actualizar cliente
 const clientUpdateSchema = z.object({
   firstName: z.string().min(1, "El nombre es obligatorio"),
   lastName: z.string().min(1, "El apellido es obligatorio"),
@@ -17,11 +17,12 @@ const clientUpdateSchema = z.object({
   emergencyPhone: z.string(),
 });
 
+// GET: Obtener cliente por ID
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id?: string } } // Tipo ajustado a los estándares de Next.js
 ) {
-  const { id } = params;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -52,11 +53,12 @@ export async function GET(
   }
 }
 
+// PUT: Actualizar cliente por ID
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id?: string } } // Tipo ajustado
 ) {
-  const { id } = params;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -67,11 +69,8 @@ export async function PUT(
 
   try {
     const body = await req.json();
-
-    // Validar los datos con el esquema definido
     const validatedData = clientUpdateSchema.parse(body);
 
-    // Actualizar el cliente en la base de datos
     const updatedClient = await prisma.clientProfile.update({
       where: { profile_id: Number(id) },
       data: {
@@ -106,11 +105,12 @@ export async function PUT(
   }
 }
 
+// DELETE: Eliminar cliente por ID
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id?: string } } // Tipo ajustado
 ) {
-  const { id } = params;
+  const { id } = context.params;
 
   if (!id || isNaN(Number(id))) {
     return NextResponse.json(
@@ -131,7 +131,6 @@ export async function DELETE(
       );
     }
 
-    // Eliminar el perfil del cliente y su usuario relacionado
     await prisma.clientProfile.delete({
       where: { profile_id: Number(id) },
     });

@@ -1,13 +1,13 @@
-// ./src/app/api/auth/[...nextauth]/route.ts
-
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/libs/prisma";
 import bcrypt from "bcrypt";
+import { NextAuthOptions } from "next-auth";
 
-export const authOptions: AuthOptions = {
+// Define las opciones de autenticación fuera del scope de las exportaciones HTTP
+const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
@@ -29,12 +29,15 @@ export const authOptions: AuthOptions = {
           where: { email: credentials.email },
         });
 
-        if (!user) throw new Error("Usuario no encontrado");
+        if (!user) {
+          throw new Error("Usuario no encontrado");
+        }
 
-        // Comparar la contraseña hasheada
         const isMatch = await bcrypt.compare(credentials.password, user.password!);
 
-        if (!isMatch) throw new Error("Contraseña incorrecta");
+        if (!isMatch) {
+          throw new Error("Contraseña incorrecta");
+        }
 
         if (!user.emailVerified) {
           throw new Error("Debes verificar tu correo electrónico antes de iniciar sesión");
@@ -64,14 +67,12 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    async signIn({ user, account, profile }) {
-      // Crear ClientProfile para usuarios de Google o credenciales
+    async signIn({ user }) {
       const existingProfile = await prisma.clientProfile.findUnique({
         where: { user_id: user.id },
       });
 
       if (!existingProfile) {
-        // Crear el ClientProfile
         await prisma.clientProfile.create({
           data: {
             profile_first_name: user.name?.split(" ")[0] || "",
@@ -91,12 +92,12 @@ export const authOptions: AuthOptions = {
   },
   pages: {
     signIn: "/auth/login",
-    // Puedes agregar más páginas personalizadas como signOut, error, etc.
   },
   secret: process.env.NEXTAUTH_SECRET,
   useSecureCookies: process.env.NODE_ENV === "production",
 };
 
+// Exporta el handler HTTP utilizando las opciones de NextAuth
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

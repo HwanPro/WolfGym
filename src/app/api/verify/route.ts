@@ -1,5 +1,5 @@
 import db from "@/libs/db";
-import { getEmailFromToken } from "@/utils/auth";
+import { getEmailFromToken } from '@/utils/auth';
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

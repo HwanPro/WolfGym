@@ -10,8 +10,12 @@ const clientUpdateSchema = z.object({
   firstName: z.string().min(1, "El nombre es obligatorio"),
   lastName: z.string().min(1, "El apellido es obligatorio"),
   plan: z.enum(["Básico", "Premium", "VIP"]),
-  startDate: z.string(),
-  endDate: z.string(),
+  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Fecha de inicio inválida",
+  }),
+  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
+    message: "Fecha de fin inválida",
+  }),
   phone: z.string(),
   emergencyPhone: z.string(),
 });
@@ -21,8 +25,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es obligatorio" },
+        { status: 400 }
+      );
+    }
+
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: params.id},
+      where: { profile_id: params.id },
       include: {
         user: true,
       },
@@ -35,7 +46,7 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(client);
+    return NextResponse.json(client, { status: 200 });
   } catch (error) {
     console.error("Error al obtener cliente:", error);
     return NextResponse.json(
@@ -50,6 +61,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es obligatorio" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
 
@@ -113,7 +131,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Buscar el cliente para obtener el user_id
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es obligatorio" },
+        { status: 400 }
+      );
+    }
+
     const client = await prisma.clientProfile.findUnique({
       where: { profile_id: params.id },
     });

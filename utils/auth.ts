@@ -6,3 +6,8 @@ export function generateVerificationToken() {
   const token = crypto.randomBytes(32).toString("hex");
   return token;
 }
+export const getEmailFromToken = (token: string): string => {
+  // Lógica para decodificar el token y obtener el email
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  return payload.email || '';
+};

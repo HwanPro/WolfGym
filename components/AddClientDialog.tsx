@@ -1,22 +1,29 @@
-// components/AddClientDialog.tsx
-
-import PhoneInput from "react-phone-number-input";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "./ui/button";
 
 export default function AddClientDialog({
   onSave = () => console.warn("La función onSave no fue proporcionada."),
 }: {
-  onSave?: (client: any) => void;
+  onSave?: (client: {
+    firstName: string;
+    lastName: string;
+    plan: string;
+    startDate: string;
+    endDate: string;
+    phone: string;
+    emergencyPhone: string;
+    email: string;
+  }) => void;
 }) {
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
   const [plan, setPlan] = useState("Básico");
   const [membershipStart, setMembershipStart] = useState("");
   const [membershipEnd, setMembershipEnd] = useState("");
-  const [phone, setPhone] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [phone, setPhone] = useState<string | undefined>(undefined);
+  const [emergencyPhone, setEmergencyPhone] = useState<string | undefined>(undefined);
   const [email, setEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -34,13 +41,16 @@ export default function AddClientDialog({
       return;
     }
 
+    if (!isValidPhoneNumber(phone) || !isValidPhoneNumber(emergencyPhone)) {
+      setErrorMessage("Por favor, ingrese números de teléfono válidos.");
+      return;
+    }
+
     const startDate = new Date(membershipStart);
     const endDate = new Date(membershipEnd);
 
     if (startDate >= endDate) {
-      setErrorMessage(
-        "La fecha de inicio debe ser anterior a la fecha de fin."
-      );
+      setErrorMessage("La fecha de inicio debe ser anterior a la fecha de fin.");
       return;
     }
 
@@ -75,8 +85,8 @@ export default function AddClientDialog({
       setPlan("Básico");
       setMembershipStart("");
       setMembershipEnd("");
-      setPhone("");
-      setEmergencyPhone("");
+      setPhone(undefined);
+      setEmergencyPhone(undefined);
       setEmail("");
       setErrorMessage("");
 
@@ -118,13 +128,13 @@ export default function AddClientDialog({
           Mensual
         </option>
         <option value="Básico" className="bg-white text-black">
-          Promocion Básica
+          Promoción Básica
         </option>
         <option value="Premium" className="bg-white text-black">
-        Promocion Premium
+          Promoción Premium
         </option>
         <option value="VIP" className="bg-white text-black">
-        Promocion  VIP
+          Promoción VIP
         </option>
       </select>
       <label className="block text-sm font-bold mb-1 text-black">

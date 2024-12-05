@@ -58,14 +58,15 @@ model PaymentRecord {
 
 model UserContact {
   contact_id      Int      @id @default(autoincrement())
-  contact_user_id String?
+  contact_user_id String   // Si siempre debe haber un usuario relacionado, elimina el `?`
   contact_message String
   contact_created DateTime @default(now())
-  contact_user    User?    @relation("UserContacts", fields: [contact_user_id], references: [id])
+  contact_user    User     @relation("UserContacts", fields: [contact_user_id], references: [id])
 }
 
+
 model ClientProfile {
-  profile_id              Int      @id @default(autoincrement())
+  profile_id              String   @id @default(cuid())
   profile_first_name      String
   profile_last_name       String
   profile_plan            String

@@ -20,20 +20,20 @@ const clientUpdateSchema = z.object({
 
 export async function GET(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = parseInt(params.id, 10);
 
-  if (!id) {
+  if (isNaN(id)) {
     return NextResponse.json(
-      { error: "El ID del cliente es obligatorio" },
+      { error: "El ID del cliente es inválido" },
       { status: 400 }
     );
   }
 
   try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: parseInt(id) },
+      where: { profile_id: id },
       include: {
         user: true,
       },
@@ -58,13 +58,13 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = parseInt(params.id, 10);
 
-  if (!id) {
+  if (isNaN(id)) {
     return NextResponse.json(
-      { error: "El ID del cliente es obligatorio" },
+      { error: "El ID del cliente es inválido" },
       { status: 400 }
     );
   }
@@ -73,29 +73,21 @@ export async function PUT(
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
 
-    // Validación de números de teléfono
     const phoneNumber = parsePhoneNumberFromString(validatedData.phone, "PE");
     const emergencyPhoneNumber = parsePhoneNumberFromString(
       validatedData.emergencyPhone,
       "PE"
     );
 
-    if (!phoneNumber?.isValid()) {
+    if (!phoneNumber?.isValid() || !emergencyPhoneNumber?.isValid()) {
       return NextResponse.json(
-        { error: "El número de teléfono no es válido" },
-        { status: 400 }
-      );
-    }
-
-    if (!emergencyPhoneNumber?.isValid()) {
-      return NextResponse.json(
-        { error: "El número de emergencia no es válido" },
+        { error: "Los números de teléfono no son válidos" },
         { status: 400 }
       );
     }
 
     const updatedClient = await prisma.clientProfile.update({
-      where: { profile_id: parseInt(id) },
+      where: { profile_id: id },
       data: {
         profile_first_name: validatedData.firstName,
         profile_last_name: validatedData.lastName,
@@ -130,20 +122,20 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Record<string, string> }
 ) {
-  const { id } = context.params;
+  const id = parseInt(params.id, 10);
 
-  if (!id) {
+  if (isNaN(id)) {
     return NextResponse.json(
-      { error: "El ID del cliente es obligatorio" },
+      { error: "El ID del cliente es inválido" },
       { status: 400 }
     );
   }
 
   try {
     const client = await prisma.clientProfile.findUnique({
-      where: { profile_id: parseInt(id) },
+      where: { profile_id: id },
     });
 
     if (!client) {
@@ -153,12 +145,10 @@ export async function DELETE(
       );
     }
 
-    // Eliminar el perfil del cliente
     await prisma.clientProfile.delete({
-      where: { profile_id: parseInt(id) },
+      where: { profile_id: id },
     });
 
-    // Opcional: Eliminar el usuario asociado
     await prisma.user.delete({
       where: { id: client.user_id },
     });

@@ -1,25 +1,30 @@
 // /app/auth/login/page.tsx
 
 'use client';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Image from 'next/image';
 
+type FormData = {
+  email: string;
+  password: string;
+};
+
 export default function AuthPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
 
-  // Inicializar useForm
+  // Inicializar useForm con tipado de FormData
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm<FormData>();
 
   // Función para manejar el inicio de sesión
-  const handleLogin = async (data) => {
+  const handleLogin: SubmitHandler<FormData> = async (data) => {
     const res = await signIn('credentials', {
       redirect: false,
       email: data.email,
@@ -71,7 +76,7 @@ export default function AuthPage() {
         />
         {errors.email && (
           <span className="text-red-500 text-xs">
-            {errors.email.message}
+            {errors.email.message as string}
           </span>
         )}
 
@@ -91,7 +96,7 @@ export default function AuthPage() {
         />
         {errors.password && (
           <span className="text-red-500 text-xs">
-            {errors.password.message}
+            {errors.password.message as string}
           </span>
         )}
 

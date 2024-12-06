@@ -168,26 +168,14 @@ export default function ClientsPage() {
               Registrar Nuevo Cliente
             </DialogTitle>
             <AddClientDialog
-              onSave={(newClient) => {
-                const clientWithId: Client = {
-                  ...newClient,
-                  id: Math.random().toString(36).substr(2, 9), // Generar un ID únicoF
-                  firstName: newClient.firstName,
-                  lastName: newClient.lastName,
-                  plan: newClient.plan,
-                  startDate: newClient.startDate,
-                  endDate: newClient.endDate,
-                  phone: newClient.phone,
-                  emergencyPhone: newClient.emergencyPhone,
-                  email: newClient.email,
-                  hasPaid: newClient.hasPaid,
-                };
-
-                // Actualiza las listas de clientes
-                setClients((prev) => [...prev, clientWithId]);
-                setFilteredClients((prev) => [...prev, clientWithId]);
-                toast.success("Cliente agregado con éxito.");
-              }}
+            onSave={(newClient: Omit<Client, "id">) => {
+              const clientWithId: Client = {
+                ...newClient,
+                id: Math.random().toString(36).substr(2, 9),
+              };
+              setClients((prev) => [...prev, clientWithId]);
+              toast.success("Cliente agregado con éxito.");
+            }}
             />
             
           </DialogContent>

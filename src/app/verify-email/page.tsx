@@ -1,54 +1,60 @@
-// app/verify-email/page.tsx
+import prisma from "@/libs/prisma";
+import { NextRequest, NextResponse } from "next/server";
 
-"use client";
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url);
+    const searchParams = url.searchParams;
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+    if (!searchParams) {
+      return NextResponse.json(
+        { message: "Parámetros de búsqueda no proporcionados." },
+        { status: 400 }
+      );
+    }
 
-export default function VerifyEmailPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [message, setMessage] = useState("Verificando tu correo electrónico...");
+    const token = searchParams.get("token");
 
-  useEffect(() => {
-    const verifyEmail = async () => {
-      const token = searchParams.get("token");
-      const email = searchParams.get("email");
+    if (!token) {
+      return NextResponse.json(
+        { message: "Token no proporcionado." },
+        { status: 400 }
+      );
+    }
 
-      if (!token || !email) {
-        setMessage("Token de verificación inválido o faltante.");
-        return;
-      }
+    // Buscar el token en la base de datos
+    const record = await prisma.verificationToken.findUnique({
+      where: { token },
+    });
 
-      try {
-        const response = await fetch("/api/auth/verify-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token, email }),
-        });
+    if (!record || record.expires < new Date()) {
+      return NextResponse.json(
+        { message: "Token inválido o expirado." },
+        { status: 400 }
+      );
+    }
 
-        const data = await response.json();
+    // Marcar el correo del usuario como verificado
+    const userEmail = record.identifier; // Asegúrate de que "identifier" en VerificationToken es el email del usuario.
+    await prisma.user.update({
+      where: { email: userEmail },
+      data: { emailVerified: true },
+    });
 
-        if (response.ok) {
-          setMessage("¡Correo electrónico verificado exitosamente!");
-          // Puedes redirigir al usuario o mostrar un enlace para iniciar sesión
-        } else {
-          setMessage(data.message || "Error al verificar el correo electrónico.");
-        }
-      } catch (error) {
-        console.error("Error al verificar el correo electrónico:", error);
-        setMessage("Error al verificar el correo electrónico.");
-      }
-    };
+    // Eliminar el token usado
+    await prisma.verificationToken.delete({
+      where: { token },
+    });
 
-    verifyEmail();
-  }, [searchParams]);
-
-  return (
-    <div className="p-6 bg-black min-h-screen text-white flex items-center justify-center">
-      <h1 className="text-xl">{message}</h1>
-    </div>
-  );
+    return NextResponse.json(
+      { message: "Correo verificado exitosamente." },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error al verificar el correo:", error);
+    return NextResponse.json(
+      { message: "Error al verificar el correo." },
+      { status: 500 }
+    );
+  }
 }

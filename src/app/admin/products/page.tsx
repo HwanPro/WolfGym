@@ -1,240 +1,235 @@
 "use client";
 
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import EditProductDialog from "@/components/EditProductDialog";
-import Image from "next/image";
-
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogTrigger,
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog";
-import AddProductDialog from "@/components/AddProductDialog";
-import ConfirmDialog from "@/components/ConfirmDialog";
-import { toast } from "react-toastify";
+import AddClientDialog from "@/components/AddClientDialog";
+import Link from "next/link";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-type Product = {
+// Definir la interfaz para los datos del cliente
+interface Client {
   id: string;
-  name: string;
-  description: string;
-  price: number;
-  discount: number;
-  stock: number;
-  imageUrl: string;
-};
+  firstName: string;
+  lastName: string;
+  plan: string;
+  membershipStart: string;
+  membershipEnd: string;
+  phone: string;
+  emergencyPhone: string;
+  email: string;
+  hasPaid: boolean;
+}
 
-export default function ProductList() {
-  const [products, setProducts] = useState<Product[]>([]);
+export default function ClientsPage() {
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
-
-  const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch("/api/products"); // Cambié "/api/products/add" a "/api/products"
-      if (!response.ok) {
-        throw new Error("Error al obtener los productos");
-      }
-      const data = await response.json();
-      const formattedProducts = data.map((product: any) => ({
-        id: product.item_id,
-        name: product.item_name,
-        description: product.item_description,
-        price: product.item_price,
-        discount: product.item_discount,
-        stock: product.item_stock,
-        imageUrl: product.item_image_url || "/placeholder-image.png", // Fallback en caso de no tener imagen
-      }));
-      setProducts(formattedProducts);
-      setFilteredProducts(formattedProducts);
-    } catch (error) {
-      console.error("Error al obtener los productos:", error);
-      toast.error("Error al cargar los productos");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchProducts();
+    const fetchClients = async () => {
+      try {
+        const response = await fetch("/api/clients");
+        if (!response.ok) throw new Error("Error al obtener los clientes");
+        const data = await response.json();
+
+        // Mapear los campos de la API a campos amigables para el frontend
+        const sanitizedData: Client[] = data.map((client: any) => ({
+          id: client.profile_id,
+          firstName: client.profile_first_name || "Sin nombre",
+          lastName: client.profile_last_name || "Sin apellido",
+          plan: client.profile_plan || "Sin plan",
+          membershipStart: client.profile_start_date
+            ? new Date(client.profile_start_date).toLocaleDateString()
+            : "Sin fecha",
+          membershipEnd: client.profile_end_date
+            ? new Date(client.profile_end_date).toLocaleDateString()
+            : "Sin fecha",
+          phone: client.profile_phone,
+          emergencyPhone: client.profile_emergency_phone,
+          email: client.profile_email,
+          hasPaid: client.profile_has_paid,
+        }));
+
+        setClients(sanitizedData);
+        setFilteredClients(sanitizedData);
+      } catch (error) {
+        console.error("Error al cargar clientes:", error);
+        toast.error("Error al cargar clientes. Inténtelo más tarde.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchClients();
   }, []);
 
+  // Filtro de búsqueda
   useEffect(() => {
-    const results = products.filter((product) =>
-      product.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    const filter = clients.filter((client) =>
+      `${client.firstName} ${client.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
     );
-    setFilteredProducts(results);
-  }, [searchTerm, products]);
+    setFilteredClients(filter);
+  }, [searchQuery, clients]);
 
-  const handleDelete = async () => {
-    if (!deleteProductId) return;
-
-    try {
-      const response = await fetch(`/api/products/${deleteProductId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        // Manejo de errores con comprobación de contenido JSON
-        const errorData = await response.json().catch(() => null); // Maneja respuestas vacías
-        console.error("Error al eliminar el producto:", errorData);
-        throw new Error(errorData?.error || "Error al eliminar el producto");
-      }
-
-      toast.dismiss();
-      toast.success("Producto eliminado correctamente");
-      fetchProducts(); // Refresca la lista de productos
-    } catch (error) {
-      console.error("Error al eliminar el producto:", error);
-      toast.error(error.message || "Error al eliminar el producto");
-    } finally {
-      setShowConfirmDialog(false);
-      setDeleteProductId(null);
-    }
+  const handleDeleteClick = (id: string) => {
+    setClientToDelete(id);
+    setShowConfirm(true);
   };
 
-  const handleEditSave = async (updatedProduct: Product) => {
+  const confirmDelete = async () => {
+    if (!clientToDelete) {
+      toast.error("No se pudo identificar al cliente a eliminar.");
+      return;
+    }
+
     try {
-      const response = await fetch(`/api/products`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedProduct),
+      const response = await fetch(`/api/clients/${clientToDelete}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({})); // Manejo de JSON inválido
-        console.error("Error al actualizar el producto:", errorData);
-        throw new Error(errorData.error || "Error al actualizar el producto");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al eliminar el cliente");
       }
 
-      const data = await response.json();
-      toast.dismiss();
-      toast.success("Producto actualizado correctamente");
-      fetchProducts();
-      setSelectedProduct(null); // Cierra el diálogo después de guardar
+      setClients((prev) =>
+        prev.filter((client) => client.id !== clientToDelete)
+      );
+      setFilteredClients((prev) =>
+        prev.filter((client) => client.id !== clientToDelete)
+      );
+      toast.success("Cliente eliminado con éxito.");
     } catch (error) {
-      console.error("Error al actualizar el producto:", error);
-      toast.error("Error al actualizar el producto");
+      if (error instanceof Error) {
+        console.error("Error al eliminar cliente:", error.message);
+        toast.error(error.message || "Error al eliminar cliente. Inténtelo más tarde.");
+      }
+    } finally {
+      setShowConfirm(false);
+      setClientToDelete(null);
     }
   };
 
   if (loading) {
-    return <p className="text-center text-yellow-400">Cargando productos...</p>;
+    return <p className="text-center text-yellow-400">Cargando clientes...</p>;
   }
 
   return (
-    <div className="p-6 bg-black min-h-screen">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-yellow-400">
-          Gestión de Productos
-        </h1>
-        <div className="flex gap-4">
-          <input
-            type="text"
-            placeholder="Buscar producto..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded-md text-black"
-          />
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="bg-yellow-400 text-black hover:bg-yellow-500">
-                Agregar Producto
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogTitle className="text-yellow-400 text-center">
-                Agregar Producto
-              </DialogTitle>
-              <AddProductDialog onSave={fetchProducts} />
-            </DialogContent>
-          </Dialog>
-          <Button
-            onClick={() => (window.location.href = "/admin/dashboard")}
-            className="bg-yellow-400 text-black hover:bg-yellow-500"
-          >
-            Volver al Panel
-          </Button>
-        </div>
+    <div className="p-6 bg-black min-h-screen text-white">
+      <ToastContainer />
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-yellow-400">Gestión de Clientes</h1>
+        <Link
+          href="/admin/dashboard"
+          className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
+        >
+          Volver al Dashboard
+        </Link>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white rounded-lg shadow-lg p-4 flex flex-col items-center text-center transform transition-all hover:scale-105 hover:shadow-2xl max-w-[220px]"
-          >
-            {product.discount > 0 && (
-              <div className="absolute top-0 left-0 bg-yellow-400 text-black text-xs px-2 py-1 font-bold rounded-tr-lg">
-                {product.discount.toFixed(2)}% OFF
-              </div>
-            )}
-            <Image
-              src={session?.user?.image || "/default-avatar.png"}
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover"
-              width={32}
-              height={32}
+
+      <div className="flex items-center justify-between mb-6">
+        <input
+          type="text"
+          className="p-2 rounded border w-full max-w-sm"
+          placeholder="Buscar cliente por nombre o apellido"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="ml-4 bg-yellow-400 text-black hover:bg-yellow-500">
+              Añadir Cliente
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <DialogTitle className="text-black text-lg font-bold mb-4">
+              Registrar Nuevo Cliente
+            </DialogTitle>
+            <AddClientDialog
+              onSave={(newClient: Omit<Client, "id">) => {
+                const clientWithId: Client = {
+                  ...newClient,
+                  id: Math.random().toString(36).substr(2, 9),
+                };
+
+                setClients((prev) => [...prev, clientWithId]);
+                setFilteredClients((prev) => [...prev, clientWithId]);
+                toast.success("Cliente agregado con éxito.");
+              }}
             />
-            <h2 className="text-sm font-bold text-black">{product.name}</h2>
-            <p className="text-xs text-gray-500">{product.description}</p>
-            <p className="text-yellow-400 font-bold">
-              S/.{" "}
-              {(
-                product.price -
-                (product.price * product.discount) / 100
-              ).toFixed(2)}
-            </p>
-            <p className="text-xs text-gray-500">Stock: {product.stock}</p>
-            <div className="flex gap-2 mt-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    className="bg-yellow-400 text-black hover:bg-yellow-500 text-xs"
-                    onClick={() => setSelectedProduct(product)}
-                  >
-                    Editar
-                  </Button>
-                </DialogTrigger>
-                {selectedProduct && selectedProduct.id === product.id && (
-                  <DialogContent>
-                    <DialogTitle className="text-yellow-400 text-center">
-                      Editar Producto
-                    </DialogTitle>
-                    <EditProductDialog
-                      product={selectedProduct}
-                      onSave={handleEditSave}
-                      onClose={() => setSelectedProduct(null)}
-                    />
-                  </DialogContent>
-                )}
-              </Dialog>
-              <Button
-                onClick={() => {
-                  setDeleteProductId(product.id);
-                  setShowConfirmDialog(true);
-                }}
-                className="bg-red-500 text-white hover:bg-red-600 text-xs"
-              >
-                Eliminar
-              </Button>
-            </div>
-          </div>
-        ))}
+          </DialogContent>
+        </Dialog>
       </div>
-      {showConfirmDialog && (
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="text-yellow-400">Nombre</TableHead>
+            <TableHead className="text-yellow-400">Apellidos</TableHead>
+            <TableHead className="text-yellow-400">Plan</TableHead>
+            <TableHead className="text-yellow-400">Fecha de Inicio</TableHead>
+            <TableHead className="text-yellow-400">Fecha de Fin</TableHead>
+            <TableHead className="text-yellow-400">Acción</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredClients.length > 0 ? (
+            filteredClients.map((client) => (
+              <TableRow key={client.id}>
+                <TableCell>{client.firstName}</TableCell>
+                <TableCell>{client.lastName}</TableCell>
+                <TableCell>{client.plan}</TableCell>
+                <TableCell>{client.membershipStart}</TableCell>
+                <TableCell>{client.membershipEnd}</TableCell>
+                <TableCell>
+                  <Button
+                    className="bg-red-500 text-white hover:bg-red-600"
+                    onClick={() => handleDeleteClick(client.id)}
+                  >
+                    Eliminar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center">
+                No hay clientes disponibles
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+
+      {showConfirm && (
         <ConfirmDialog
-          message="¿Estás seguro de que deseas eliminar este producto?"
-          onConfirm={handleDelete}
-          onCancel={() => {
-            setShowConfirmDialog(false);
-            setDeleteProductId(null);
-          }}
+          message="¿Estás seguro de que deseas eliminar este cliente?"
+          onConfirm={confirmDelete}
+          onCancel={() => setShowConfirm(false)}
         />
       )}
     </div>

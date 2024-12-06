@@ -1,12 +1,10 @@
-// /app/api/auth/verify-email/route.ts
-
 import prisma from "@/libs/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const token = searchParams.get("token");
+    const url = new URL(req.url);
+    const token = url.searchParams.get("token");
 
     if (!token) {
       return NextResponse.json(
@@ -28,12 +26,12 @@ export async function GET(req: NextRequest) {
     }
 
     // Marcar el correo del usuario como verificado
-    const userEmail = record.identifier; // Asegúrate de que "identifier" en VerificationToken es el email del usuario.
+    const userEmail = record.identifier;
     await prisma.user.update({
       where: { email: userEmail },
       data: { emailVerified: true },
     });
-    
+
     // Eliminar el token usado
     await prisma.verificationToken.delete({
       where: { token },

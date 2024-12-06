@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/libs/authOptions'; // Importar desde el nuevo archivo
+import bcrypt from 'bcryptjs';
 
 // Esquema de validación con Zod
 const clientSchema = z.object({
@@ -77,12 +78,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hashear la contraseña predeterminada
+    const defaultPassword = 'defaultPassword123'; // Esto es solo un ejemplo, asegúrate de reemplazar esto por una lógica segura.
+    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
     // Crear el usuario en la tabla User
     const user = await prisma.user.create({
       data: {
         name: `${validatedData.firstName} ${validatedData.lastName}`,
         email: validatedData.email,
         role: 'client',
+        password: hashedPassword, // Agregar contraseña hasheada
       },
     });
 

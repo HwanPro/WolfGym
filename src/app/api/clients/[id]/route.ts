@@ -5,7 +5,7 @@ import prisma from "@/libs/prisma";
 export async function GET(
   req: NextRequest,
   context: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   const { id } = context.params;
 
   try {

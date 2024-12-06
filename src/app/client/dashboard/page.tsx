@@ -1,5 +1,3 @@
-// src/app/client/dashboard/page.tsx
-
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
@@ -7,13 +5,29 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+interface Product {
+  item_id: string;
+  item_name: string;
+  item_description: string;
+  item_price: number;
+  item_image_url: string;
+}
+
+interface ClientData {
+  profile_first_name: string;
+  profile_last_name: string;
+  profile_plan: string;
+  profile_start_date: string;
+  profile_end_date: string;
+}
+
 export default function ClientDashboard() {
   const { data: session } = useSession();
-  const [clientData, setClientData] = useState(null);
+  const [clientData, setClientData] = useState<ClientData | null>(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [suggestedProducts, setSuggestedProducts] = useState([]);
-  const profileMenuRef = useRef(null);
-  const [remainingDays, setRemainingDays] = useState(null);
+  const [suggestedProducts, setSuggestedProducts] = useState<Product[]>([]);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const [remainingDays, setRemainingDays] = useState<number | null>(null);
 
   useEffect(() => {
     // Función para obtener los datos del cliente
@@ -26,14 +40,14 @@ export default function ClientDashboard() {
           throw new Error(`Error ${response.status}: ${errorText}`);
         }
 
-        const data = await response.json();
+        const data: ClientData = await response.json();
         setClientData(data);
 
         // Calcular los días restantes de la suscripción
         if (data.profile_end_date) {
           const endDate = new Date(data.profile_end_date);
           const today = new Date();
-          const timeDiff = endDate - today;
+          const timeDiff = endDate.getTime() - today.getTime();
           const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
           setRemainingDays(daysRemaining > 0 ? daysRemaining : 0);
         }
@@ -54,18 +68,9 @@ export default function ClientDashboard() {
           const errorText = await response.text();
           throw new Error(`Error ${response.status}: ${errorText}`);
         }
-        const data = await response.json();
+        const data: Product[] = await response.json();
 
-        // Mapear los datos correctamente
-        const formattedProducts = data.map((product) => ({
-          item_id: product.item_id,
-          item_name: product.item_name,
-          item_description: product.item_description,
-          item_price: product.item_price,
-          item_image_url: product.item_image_url || "/placeholder-image.png",
-        }));
-
-        setSuggestedProducts(formattedProducts.slice(0, 5)); // Muestra 5 productos sugeridos
+        setSuggestedProducts(data.slice(0, 5)); // Muestra 5 productos sugeridos
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -76,17 +81,17 @@ export default function ClientDashboard() {
 
   // Cerrar el menú al hacer clic fuera o presionar Escape
   useEffect(() => {
-    function handleClickOutside(event) {
+    function handleClickOutside(event: MouseEvent) {
       if (
         profileMenuRef.current &&
-        !profileMenuRef.current.contains(event.target) &&
-        !event.target.closest(".profile-button")
+        !profileMenuRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest(".profile-button")
       ) {
         setShowProfileMenu(false);
       }
     }
 
-    function handleEscape(event) {
+    function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setShowProfileMenu(false);
       }

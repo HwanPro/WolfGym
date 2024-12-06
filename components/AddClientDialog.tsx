@@ -3,7 +3,8 @@ import "react-phone-number-input/style.css";
 import { useState } from "react";
 import { Button } from "./ui/button";
 
-type Client = {
+interface Client {
+  id?: string; // Se hace opcional para poder reutilizarlo en la creación de nuevos clientes
   firstName: string;
   lastName: string;
   plan: string;
@@ -12,13 +13,13 @@ type Client = {
   phone: string;
   emergencyPhone: string;
   email: string;
-  hasPaid: boolean; // Estado de pago
-};
+  hasPaid: boolean;
+}
 
 export default function AddClientDialog({
-  onSave = () => console.warn("La función onSave no fue proporcionada."),
+  onSave,
 }: {
-  onSave?: (client: Client) => void;
+  onSave: (client: Omit<Client, "id">) => void;
 }) {
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -30,11 +31,10 @@ export default function AddClientDialog({
     undefined
   );
   const [email, setEmail] = useState("");
-  const [hasPaid, setHasPaid] = useState<boolean | null>(null); // Controla "Sí" o "No"
+  const [hasPaid, setHasPaid] = useState<boolean | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSave = async () => {
-    // Validación de campos
+  const handleSave = () => {
     if (
       !name ||
       !lastName ||
@@ -62,7 +62,7 @@ export default function AddClientDialog({
       return;
     }
 
-    const newClient: Client = {
+    const newClient: Omit<Client, "id"> = {
       firstName: name,
       lastName: lastName,
       plan: plan,
@@ -71,25 +71,12 @@ export default function AddClientDialog({
       phone: phone,
       emergencyPhone: emergencyPhone,
       email: email,
-      hasPaid: hasPaid,
+      hasPaid: hasPaid!,
     };
 
     try {
-      const response = await fetch("/api/clients", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newClient),
-      });
+      onSave(newClient);
 
-      if (!response.ok) {
-        throw new Error("No se pudo guardar el cliente. Intente nuevamente.");
-      }
-
-      const savedClient = await response.json();
-
-      // Reinicia el formulario
       setName("");
       setLastName("");
       setPlan("Básico");
@@ -100,8 +87,6 @@ export default function AddClientDialog({
       setEmail("");
       setHasPaid(null);
       setErrorMessage("");
-
-      onSave(savedClient);
     } catch (error) {
       console.error("Error al guardar cliente:", error);
       setErrorMessage("No se pudo guardar el cliente. Intente nuevamente.");

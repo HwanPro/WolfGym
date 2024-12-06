@@ -3,20 +3,22 @@ import "react-phone-number-input/style.css";
 import { useState } from "react";
 import { Button } from "./ui/button";
 
+type Client = {
+  firstName: string;
+  lastName: string;
+  plan: string;
+  startDate: string;
+  endDate: string;
+  phone: string;
+  emergencyPhone: string;
+  email: string;
+  hasPaid: boolean; // Estado de pago
+};
+
 export default function AddClientDialog({
   onSave = () => console.warn("La función onSave no fue proporcionada."),
 }: {
-  onSave?: (client: {
-    firstName: string;
-    lastName: string;
-    plan: string;
-    startDate: string;
-    endDate: string;
-    phone: string;
-    emergencyPhone: string;
-    email: string;
-    hasPaid: boolean; // Nuevo campo agregado
-  }) => void;
+  onSave?: (client: Client) => void;
 }) {
   const [name, setName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -28,10 +30,11 @@ export default function AddClientDialog({
     undefined
   );
   const [email, setEmail] = useState("");
-  const [hasPaid, setHasPaid] = useState(false); // Estado para "¿Ha pagado?"
+  const [hasPaid, setHasPaid] = useState<boolean | null>(null); // Controla "Sí" o "No"
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSave = async () => {
+    // Validación de campos
     if (
       !name ||
       !lastName ||
@@ -39,7 +42,8 @@ export default function AddClientDialog({
       !membershipEnd ||
       !phone ||
       !emergencyPhone ||
-      !email
+      !email ||
+      hasPaid === null
     ) {
       setErrorMessage("Por favor, complete todos los campos.");
       return;
@@ -58,7 +62,7 @@ export default function AddClientDialog({
       return;
     }
 
-    const newClient = {
+    const newClient: Client = {
       firstName: name,
       lastName: lastName,
       plan: plan,
@@ -67,7 +71,7 @@ export default function AddClientDialog({
       phone: phone,
       emergencyPhone: emergencyPhone,
       email: email,
-      hasPaid: hasPaid, // Incluye el estado de pago
+      hasPaid: hasPaid,
     };
 
     try {
@@ -94,7 +98,7 @@ export default function AddClientDialog({
       setPhone(undefined);
       setEmergencyPhone(undefined);
       setEmail("");
-      setHasPaid(false); // Reinicia el estado de pago
+      setHasPaid(null);
       setErrorMessage("");
 
       onSave(savedClient);
@@ -131,26 +135,25 @@ export default function AddClientDialog({
         value={plan}
         onChange={(e) => setPlan(e.target.value)}
       >
-        <option value="Básico" className="bg-white text-black">
-          Mensual
-        </option>
-        <option value="Promoción Básica" className="bg-white text-black">
-          Promoción Básica
-        </option>
-        <option value="Promoción Premium" className="bg-white text-black">
-          Promoción Premium
-        </option>
-        <option value="Promoción VIP" className="bg-white text-black">
-          Promoción VIP
-        </option>
+        <option value="Básico">Mensual</option>
+        <option value="Promoción Básica">Promoción Básica</option>
+        <option value="Promoción Premium">Promoción Premium</option>
+        <option value="Promoción VIP">Promoción VIP</option>
       </select>
-      <label className="block text-sm font-bold mb-1">¿Ha pagado?</label>
-      <input
-        type="checkbox"
-        checked={hasPaid}
-        onChange={(e) => setHasPaid(e.target.checked)}
-        className="mb-4"
-      />
+      <label className="block text-sm font-bold mb-1 text-black">
+        ¿Ha pagado?
+      </label>
+      <select
+        className="w-full p-2 mb-4 border rounded bg-white text-black"
+        value={hasPaid !== null ? (hasPaid ? "Sí" : "No") : ""}
+        onChange={(e) => {
+          setHasPaid(e.target.value === "Sí");
+        }}
+      >
+        <option value="">Seleccione una opción</option>
+        <option value="Sí">Sí</option>
+        <option value="No">No</option>
+      </select>
       <label className="block text-sm font-bold mb-1 text-black">
         Fecha de inicio de membresía
       </label>

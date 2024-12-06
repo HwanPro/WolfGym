@@ -1,6 +1,7 @@
-//src/app/admin/client/dasboard/page.tsx
+// src/app/admin/clients/dashboard/page.tsx
 
 "use client";
+
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,11 +24,21 @@ import Link from "next/link";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Define el tipo para los datos del cliente
+interface Client {
+  id: string;
+  name: string;
+  lastName: string;
+  plan: string;
+  membershipStart: string;
+  membershipEnd: string;
+}
+
 export default function ClientsPage() {
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filteredClients, setFilteredClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState<Client[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
 
@@ -40,7 +51,7 @@ export default function ClientsPage() {
         const data = await response.json();
 
         // Map API fields to frontend-friendly names
-        const sanitizedData = data.map((client: any) => ({
+        const sanitizedData: Client[] = data.map((client: any) => ({
           id: client.profile_id,
           name: client.profile_first_name || "Sin nombre",
           lastName: client.profile_last_name || "Sin apellido",
@@ -68,7 +79,7 @@ export default function ClientsPage() {
 
   // Search Filter
   useEffect(() => {
-    const filter = clients.filter((client: any) =>
+    const filter = clients.filter((client) =>
       `${client.name} ${client.lastName}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
@@ -157,8 +168,14 @@ export default function ClientsPage() {
               Registrar Nuevo Cliente
             </DialogTitle>
             <AddClientDialog
-              onSave={(newClient) => {
-                setClients((prev) => [...prev, newClient]);
+              onSave={(newClient:Omit<Client, "id">) => {
+                const clientWithId: Client = {
+                  ...newClient,
+                  id: Math.random().toString(36).substr(2, 9), // Genera un ID único
+                  membershipStart: newClient.membershipStart || "Sin fecha",
+                  membershipEnd: newClient.membershipEnd || "Sin fecha",
+                };
+                setClients((prev) => [...prev, clientWithId]);
                 toast.success("Cliente agregado con éxito.");
               }}
             />
@@ -179,8 +196,8 @@ export default function ClientsPage() {
         </TableHeader>
         <TableBody>
           {filteredClients.length > 0 ? (
-            filteredClients.map((client, index) => (
-              <TableRow key={client.id || index}>
+            filteredClients.map((client) => (
+              <TableRow key={client.id}>
                 <TableCell>{client.name}</TableCell>
                 <TableCell>{client.lastName}</TableCell>
                 <TableCell>{client.plan}</TableCell>

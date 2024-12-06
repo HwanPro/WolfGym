@@ -27,11 +27,15 @@ import "react-toastify/dist/ReactToastify.css";
 // Define el tipo para los datos del cliente
 interface Client {
   id: string;
-  name: string;
+  firstName: string;
   lastName: string;
   plan: string;
   membershipStart: string;
   membershipEnd: string;
+  phone: string;
+  emergencyPhone: string;
+  email: string;
+  hasPaid: boolean;
 }
 
 export default function ClientsPage() {
@@ -80,10 +84,11 @@ export default function ClientsPage() {
   // Search Filter
   useEffect(() => {
     const filter = clients.filter((client) =>
-      `${client.name} ${client.lastName}`
+      `${client.firstName} ${client.lastName}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase())
     );
+
     setFilteredClients(filter);
   }, [searchQuery, clients]);
 
@@ -168,16 +173,16 @@ export default function ClientsPage() {
               Registrar Nuevo Cliente
             </DialogTitle>
             <AddClientDialog
-            onSave={(newClient: Omit<Client, "id">) => {
-              const clientWithId: Client = {
-                ...newClient,
-                id: Math.random().toString(36).substr(2, 9),
-              };
-              setClients((prev) => [...prev, clientWithId]);
-              toast.success("Cliente agregado con éxito.");
-            }}
+              onSave={(newClient: Omit<Client, "id">) => {
+                const clientWithId: Client = {
+                  ...newClient,
+                  id: Math.random().toString(36).substr(2, 9),
+                };
+
+                setClients((prev) => [...prev, clientWithId]);
+                toast.success("Cliente agregado con éxito.");
+              }}
             />
-            
           </DialogContent>
         </Dialog>
       </div>
@@ -197,7 +202,7 @@ export default function ClientsPage() {
           {filteredClients.length > 0 ? (
             filteredClients.map((client) => (
               <TableRow key={client.id}>
-                <TableCell>{client.name}</TableCell>
+                <TableCell>{client.firstName}</TableCell>
                 <TableCell>{client.lastName}</TableCell>
                 <TableCell>{client.plan}</TableCell>
                 <TableCell>{client.membershipStart}</TableCell>

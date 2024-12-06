@@ -4,17 +4,18 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 
 interface Client {
-  id?: string; // Se hace opcional para poder reutilizarlo en la creación de nuevos clientes
+  id: string;
   firstName: string;
   lastName: string;
   plan: string;
-  startDate: string;
-  endDate: string;
+  membershipStart: string;
+  membershipEnd: string;
   phone: string;
   emergencyPhone: string;
   email: string;
   hasPaid: boolean;
 }
+
 
 export default function AddClientDialog({
   onSave,
@@ -58,21 +59,23 @@ export default function AddClientDialog({
     const endDate = new Date(membershipEnd);
 
     if (startDate >= endDate) {
-      setErrorMessage("La fecha de inicio debe ser anterior a la fecha de fin.");
+      setErrorMessage(
+        "La fecha de inicio debe ser anterior a la fecha de fin."
+      );
       return;
     }
-
     const newClient: Omit<Client, "id"> = {
       firstName: name,
       lastName: lastName,
       plan: plan,
-      startDate: membershipStart,
-      endDate: membershipEnd,
+      membershipStart: membershipStart,
+      membershipEnd: membershipEnd,
       phone: phone,
       emergencyPhone: emergencyPhone,
       email: email,
       hasPaid: hasPaid!,
     };
+    
 
     try {
       onSave(newClient);

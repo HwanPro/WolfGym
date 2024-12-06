@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import { FaShoppingCart, FaUserCircle, FaSearch } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import CulqiPaymentForm, {CulqiPaymentFormHandle,} from "@/components/CulqiPaymentForm";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
@@ -27,7 +26,6 @@ export default function PublicProductList() {
   const [quantity, setQuantity] = useState(1);
   const [showCart, setShowCart] = useState(false);
   const router = useRouter();
-  const culqiRef = useRef<CulqiPaymentFormHandle>(null);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -115,27 +113,29 @@ export default function PublicProductList() {
     );
   };
 
-  const handlePaymentSuccess = (charge: any) => {
-    alert("Pago realizado con éxito");
-    // Aquí puedes manejar la lógica post-pago, como actualizar el estado del usuario o limpiar el carrito
-    setCart([]);
-    setShowCart(false);
-  };
+  const pagarCompra = async () => {
+    try {
+      // Simulación de la compra y actualización del stock
+      for (const item of cart) {
+        await fetch(`/api/products/updateStock`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            productId: item.id,
+            quantity: item.quantity,
+          }),
+        });
+      }
 
-  const handlePaymentError = (error: string) => {
-    alert(`Error en el pago: ${error}`);
-  };
-
-  // Obtener el email del usuario (implementa la lógica de autenticación si es necesario)
-  const userEmail = "cliente@example.com"; // Reemplaza esto con el email real del usuario
-
-  const pagarCompra = () => {
-    const totalAmount = calculateTotal() * 100; // Culqi espera el monto en centimos
-    culqiRef.current?.openCulqi({
-      amount: totalAmount,
-      description: "Compra de Productos",
-      email: userEmail,
-    });
+      alert("Compra realizada con éxito");
+      setCart([]);
+      setShowCart(false);
+    } catch (error) {
+      alert("Error al procesar la compra");
+      console.error("Error:", error);
+    }
   };
 
   return (
@@ -253,18 +253,7 @@ export default function PublicProductList() {
                 </div>
                 <Button
                   className="mt-4 bg-yellow-400 text-black px-4 py-2 rounded-full hover:bg-yellow-500"
-                  onClick={() => {
-                    handleAddToCart(product);
-                    culqiRef.current?.openCulqi({
-                      amount: (
-                        (product.price -
-                          (product.price * (product.discount || 0)) / 100) *
-                        quantity
-                      ).toFixed(0) as unknown as number,
-                      description: `Compra de ${product.name}`,
-                      email: userEmail,
-                    });
-                  }}
+                  onClick={() => handleAddToCart(product)}
                 >
                   Agregar al carrito
                 </Button>
@@ -300,8 +289,8 @@ export default function PublicProductList() {
                   src={item.imageUrl || "/placeholder-image.png"}
                   alt={item.name}
                   className="h-12 w-12 object-contain"
-                  width={48} // Puedes ajustar el valor según el diseño que necesites
-                  height={48} // Puedes ajustar el valor según el diseño que necesites
+                  width={48}
+                  height={48}
                 />
                 <div className="flex-1 ml-4">
                   <p className="text-sm font-bold text-black">{item.name}</p>
@@ -336,13 +325,6 @@ export default function PublicProductList() {
           </div>
         </div>
       )}
-
-      {/* Componente CulqiPaymentForm */}
-      <CulqiPaymentForm
-        ref={culqiRef}
-        onSuccess={handlePaymentSuccess}
-        onError={handlePaymentError}
-      />
     </div>
   );
 }

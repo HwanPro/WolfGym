@@ -16,6 +16,7 @@
     "@radix-ui/react-slot": "^1.1.0",
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "country-telephone-data": "^0.6.3",
     "culqi-node": "^2.1.0",

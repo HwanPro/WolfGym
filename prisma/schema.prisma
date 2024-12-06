@@ -10,13 +10,13 @@ datasource db {
 model User {
   id             String               @id @default(cuid())
   name           String?
-  email          String?              @unique
-  password       String?
-  emailVerified  Boolean  @default(false)
+  email          String               @unique
+  password       String
+  emailVerified  Boolean              @default(false)
   image          String?
   role           String               @default("client")
   twoFASecret    String?
-  isVerified     Boolean  @default(false)
+  isVerified     Boolean              @default(false)
   memberships    UserMembershipPlan[]
   payments       PaymentRecord[]      @relation("UserPayments")
   contacts       UserContact[]        @relation("UserContacts")
@@ -24,7 +24,8 @@ model User {
   accounts       Account[]
   sessions       Session[]
   purchases      Purchase[]           // Relación con Purchase
-  createdAt      DateTime             @default(now()) // Asegúrate de que este campo está presente
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model MembershipPlan {
@@ -122,9 +123,10 @@ model Session {
 }
 
 model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+  id         String    @id @default(cuid())
+  identifier String    // Correo del usuario
+  token      String    @unique
+  expires    DateTime  // Fecha de expiración
 
   @@unique([identifier, token])
 }

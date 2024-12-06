@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import EditProductDialog from "@/components/EditProductDialog";
+import Image from "next/image";
 
 import {
   Dialog,
@@ -21,7 +22,7 @@ type Product = {
   price: number;
   discount: number;
   stock: number;
-  imageUrl: string; 
+  imageUrl: string;
 };
 
 export default function ProductList() {
@@ -73,19 +74,19 @@ export default function ProductList() {
 
   const handleDelete = async () => {
     if (!deleteProductId) return;
-  
+
     try {
       const response = await fetch(`/api/products/${deleteProductId}`, {
         method: "DELETE",
       });
-  
+
       if (!response.ok) {
         // Manejo de errores con comprobación de contenido JSON
         const errorData = await response.json().catch(() => null); // Maneja respuestas vacías
         console.error("Error al eliminar el producto:", errorData);
         throw new Error(errorData?.error || "Error al eliminar el producto");
       }
-  
+
       toast.dismiss();
       toast.success("Producto eliminado correctamente");
       fetchProducts(); // Refresca la lista de productos
@@ -97,8 +98,6 @@ export default function ProductList() {
       setDeleteProductId(null);
     }
   };
-  
-  
 
   const handleEditSave = async (updatedProduct: Product) => {
     try {
@@ -107,13 +106,13 @@ export default function ProductList() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedProduct),
       });
-  
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({})); // Manejo de JSON inválido
         console.error("Error al actualizar el producto:", errorData);
         throw new Error(errorData.error || "Error al actualizar el producto");
       }
-  
+
       const data = await response.json();
       toast.dismiss();
       toast.success("Producto actualizado correctamente");
@@ -124,7 +123,7 @@ export default function ProductList() {
       toast.error("Error al actualizar el producto");
     }
   };
-  
+
   if (loading) {
     return <p className="text-center text-yellow-400">Cargando productos...</p>;
   }
@@ -175,10 +174,12 @@ export default function ProductList() {
                 {product.discount.toFixed(2)}% OFF
               </div>
             )}
-            <img
-              src={product.imageUrl || "/placeholder-image.png"}
-              alt={product.name || "Producto"}
-              className="h-20 w-20 object-contain mb-4"
+            <Image
+              src={session?.user?.image || "/default-avatar.png"}
+              alt="Avatar"
+              className="h-8 w-8 rounded-full object-cover"
+              width={32}
+              height={32}
             />
             <h2 className="text-sm font-bold text-black">{product.name}</h2>
             <p className="text-xs text-gray-500">{product.description}</p>

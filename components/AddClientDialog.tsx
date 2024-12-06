@@ -15,6 +15,7 @@ export default function AddClientDialog({
     phone: string;
     emergencyPhone: string;
     email: string;
+    hasPaid: boolean; // Nuevo campo agregado
   }) => void;
 }) {
   const [name, setName] = useState("");
@@ -23,8 +24,11 @@ export default function AddClientDialog({
   const [membershipStart, setMembershipStart] = useState("");
   const [membershipEnd, setMembershipEnd] = useState("");
   const [phone, setPhone] = useState<string | undefined>(undefined);
-  const [emergencyPhone, setEmergencyPhone] = useState<string | undefined>(undefined);
+  const [emergencyPhone, setEmergencyPhone] = useState<string | undefined>(
+    undefined
+  );
   const [email, setEmail] = useState("");
+  const [hasPaid, setHasPaid] = useState(false); // Estado para "¿Ha pagado?"
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSave = async () => {
@@ -63,6 +67,7 @@ export default function AddClientDialog({
       phone: phone,
       emergencyPhone: emergencyPhone,
       email: email,
+      hasPaid: hasPaid, // Incluye el estado de pago
     };
 
     try {
@@ -80,6 +85,7 @@ export default function AddClientDialog({
 
       const savedClient = await response.json();
 
+      // Reinicia el formulario
       setName("");
       setLastName("");
       setPlan("Básico");
@@ -88,6 +94,7 @@ export default function AddClientDialog({
       setPhone(undefined);
       setEmergencyPhone(undefined);
       setEmail("");
+      setHasPaid(false); // Reinicia el estado de pago
       setErrorMessage("");
 
       onSave(savedClient);
@@ -127,16 +134,23 @@ export default function AddClientDialog({
         <option value="Básico" className="bg-white text-black">
           Mensual
         </option>
-        <option value="Básico" className="bg-white text-black">
+        <option value="Promoción Básica" className="bg-white text-black">
           Promoción Básica
         </option>
-        <option value="Premium" className="bg-white text-black">
+        <option value="Promoción Premium" className="bg-white text-black">
           Promoción Premium
         </option>
-        <option value="VIP" className="bg-white text-black">
+        <option value="Promoción VIP" className="bg-white text-black">
           Promoción VIP
         </option>
       </select>
+      <label className="block text-sm font-bold mb-1">¿Ha pagado?</label>
+      <input
+        type="checkbox"
+        checked={hasPaid}
+        onChange={(e) => setHasPaid(e.target.checked)}
+        className="mb-4"
+      />
       <label className="block text-sm font-bold mb-1 text-black">
         Fecha de inicio de membresía
       </label>

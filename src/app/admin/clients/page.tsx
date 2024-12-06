@@ -1,3 +1,5 @@
+//src/app/admin/client/dasboard/page.tsx
+
 "use client";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useEffect, useState } from "react";
@@ -88,7 +90,7 @@ export default function ClientsPage() {
     }
 
     try {
-      const response = await fetch(`/api/clients?id=${clientToDelete}`, {
+      const response = await fetch(`/api/clients/${clientToDelete}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

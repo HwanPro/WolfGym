@@ -20,6 +20,13 @@ const clientUpdateSchema = z.object({
 // GET: Obtener cliente por ID
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es inválido o no está presente" },
+        { status: 400 }
+      );
+    }
+
     const client = await prisma.clientProfile.findUnique({
       where: { profile_id: params.id },
     });
@@ -44,6 +51,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 // PUT: Actualizar cliente por ID
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es inválido o no está presente" },
+        { status: 400 }
+      );
+    }
+
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
 
@@ -84,6 +98,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 // DELETE: Eliminar cliente por ID
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    if (!params.id) {
+      return NextResponse.json(
+        { error: "El ID del cliente es inválido o no está presente" },
+        { status: 400 }
+      );
+    }
+
     const client = await prisma.clientProfile.findUnique({
       where: { profile_id: params.id },
     });

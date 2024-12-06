@@ -5,6 +5,7 @@
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ClientDashboard() {
   const { data: session } = useSession();
@@ -12,6 +13,7 @@ export default function ClientDashboard() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [suggestedProducts, setSuggestedProducts] = useState([]);
   const profileMenuRef = useRef(null);
+  const [remainingDays, setRemainingDays] = useState(null);
 
   useEffect(() => {
     // Función para obtener los datos del cliente
@@ -26,6 +28,15 @@ export default function ClientDashboard() {
 
         const data = await response.json();
         setClientData(data);
+
+        // Calcular los días restantes de la suscripción
+        if (data.profile_end_date) {
+          const endDate = new Date(data.profile_end_date);
+          const today = new Date();
+          const timeDiff = endDate - today;
+          const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          setRemainingDays(daysRemaining > 0 ? daysRemaining : 0);
+        }
       } catch (error) {
         console.error("Error fetching client data:", error);
       }
@@ -46,7 +57,7 @@ export default function ClientDashboard() {
         const data = await response.json();
 
         // Mapear los datos correctamente
-        const formattedProducts = data.map((product: any) => ({
+        const formattedProducts = data.map((product) => ({
           item_id: product.item_id,
           item_name: product.item_name,
           item_description: product.item_description,
@@ -103,13 +114,12 @@ export default function ClientDashboard() {
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="relative profile-button"
           >
-            <img
-              src={
-                session?.user?.image ||
-                "/default-avatar.png"
-              }
-              alt="Avatar"
-              className="h-8 w-8 rounded-full object-cover"
+            <Image
+              src={session?.user?.image || "/default-avatar.png"}
+              alt={session?.user?.name || "Avatar"}
+              className="h-10 w-10 object-cover rounded-full"
+              width={40}
+              height={40}
             />
           </button>
         </div>
@@ -123,10 +133,7 @@ export default function ClientDashboard() {
         >
           <h2 className="text-lg font-bold mb-2">Mi Perfil</h2>
           <p>
-            <strong>Nombre:</strong> {session?.user?.name || "N/A"}
-          </p>
-          <p>
-            <strong>Email:</strong> {session?.user?.email || "N/A"}
+            <strong>Rol:</strong> Cliente
           </p>
           <div className="flex justify-between gap-4 mt-4">
             <button
@@ -169,6 +176,9 @@ export default function ClientDashboard() {
             ? new Date(clientData.profile_end_date).toLocaleDateString("es-ES")
             : "N/A"}
         </p>
+        {remainingDays !== null && (
+          <p>Días restantes: {remainingDays} días</p>
+        )}
       </section>
 
       {/* Opciones adicionales */}
@@ -201,10 +211,12 @@ export default function ClientDashboard() {
               key={product.item_id}
               className="bg-white rounded-lg shadow-lg p-4 flex flex-col items-center text-center"
             >
-              <img
+              <Image
                 src={product.item_image_url || "/placeholder-image.png"}
                 alt={product.item_name || "Producto"}
                 className="h-20 w-20 object-contain mb-4"
+                width={80}
+                height={80}
               />
               <h3 className="text-sm font-bold text-black">
                 {product.item_name}
@@ -215,9 +227,12 @@ export default function ClientDashboard() {
               <p className="text-yellow-400 font-bold">
                 S/. {product.item_price.toFixed(2)}
               </p>
-              <button className="mt-2 bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500">
+              <Link
+                href="/products/public"
+                className="mt-2 bg-yellow-400 text-black px-3 py-1 rounded hover:bg-yellow-500"
+              >
                 Comprar
-              </button>
+              </Link>
             </div>
           ))}
         </div>

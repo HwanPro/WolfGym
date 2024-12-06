@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { FaShoppingCart, FaUserCircle, FaSearch } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import CulqiPaymentForm, { CulqiPaymentFormHandle } from "@/components/CulqiPaymentForm";
+import CulqiPaymentForm, {CulqiPaymentFormHandle,} from "@/components/CulqiPaymentForm";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 type Product = {
   id: string;
@@ -33,7 +34,9 @@ export default function PublicProductList() {
       try {
         const response = await fetch("/api/products/public");
         if (!response.ok) {
-          const errorDetails = await response.json().catch(() => ({ error: "Unknown error" }));
+          const errorDetails = await response
+            .json()
+            .catch(() => ({ error: "Unknown error" }));
           console.error("API Error Details:", errorDetails);
           throw new Error(errorDetails.error || "Error al cargar datos");
         }
@@ -191,10 +194,12 @@ export default function PublicProductList() {
                 Agotado
               </div>
             )}
-            <img
+            <Image
               src={product.imageUrl || "/placeholder-image.png"}
               alt={product.name}
               className="h-32 w-32 object-contain mx-auto mb-4"
+              width={128}
+              height={128}
             />
             <h2 className="text-lg font-bold text-black">{product.name}</h2>
             <p className="text-sm text-black">{product.description}</p>
@@ -252,7 +257,8 @@ export default function PublicProductList() {
                     handleAddToCart(product);
                     culqiRef.current?.openCulqi({
                       amount: (
-                        (product.price - (product.price * (product.discount || 0)) / 100) *
+                        (product.price -
+                          (product.price * (product.discount || 0)) / 100) *
                         quantity
                       ).toFixed(0) as unknown as number,
                       description: `Compra de ${product.name}`,
@@ -286,11 +292,16 @@ export default function PublicProductList() {
             </button>
             <h2 className="text-lg font-bold mb-4 text-black">Carrito</h2>
             {cart.map((item, index) => (
-              <div key={index} className="flex justify-between items-center mb-2">
-                <img
+              <div
+                key={index}
+                className="flex justify-between items-center mb-2"
+              >
+                <Image
                   src={item.imageUrl || "/placeholder-image.png"}
                   alt={item.name}
                   className="h-12 w-12 object-contain"
+                  width={48} // Puedes ajustar el valor según el diseño que necesites
+                  height={48} // Puedes ajustar el valor según el diseño que necesites
                 />
                 <div className="flex-1 ml-4">
                   <p className="text-sm font-bold text-black">{item.name}</p>
@@ -327,7 +338,11 @@ export default function PublicProductList() {
       )}
 
       {/* Componente CulqiPaymentForm */}
-      <CulqiPaymentForm ref={culqiRef} onSuccess={handlePaymentSuccess} onError={handlePaymentError} />
+      <CulqiPaymentForm
+        ref={culqiRef}
+        onSuccess={handlePaymentSuccess}
+        onError={handlePaymentError}
+      />
     </div>
   );
 }

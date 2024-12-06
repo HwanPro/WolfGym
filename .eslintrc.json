@@ -10,6 +10,12 @@
     "browser": true
   },
   "rules": {
-    // Personaliza las reglas según sea necesario
-  }
+    "react/react-in-jsx-scope": "off"
+  },
+
+  
+    "extends": ["next", "next/core-web-vitals"],
+  
+  
+  "ignorePatterns": ["node_modules/", ".next/"]
 }

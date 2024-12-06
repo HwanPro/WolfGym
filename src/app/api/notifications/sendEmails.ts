@@ -1,8 +1,7 @@
 // src/app/api/notifications/sendEmails/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import nodemailer from "nodemailer";
-import prisma from "@/libs/prisma";
+import nodemailer from "nodemailer"
 
 export async function POST(req: NextRequest) {
   try {

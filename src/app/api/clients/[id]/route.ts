@@ -13,19 +13,38 @@ const clientUpdateSchema = z.object({
   endDate: z.string().refine((date) => !isNaN(Date.parse(date)), {
     message: "Fecha de fin inválida",
   }),
-  phone: z.string(),
-  emergencyPhone: z.string(),
+  phone: z.string().min(10, "El teléfono debe tener al menos 10 dígitos"),
+  emergencyPhone: z.string().min(10, "El teléfono de emergencia debe tener al menos 10 dígitos"),
 });
 
+// Utilidad para verificar el ID del cliente
+function checkClientId(id: string | undefined) {
+  if (!id) {
+    throw new Error("El ID del cliente es inválido o no está presente");
+  }
+}
+
+// Manejo de errores del servidor
+function handleServerError(error: any) {
+  console.error("Error interno:", error);
+  return NextResponse.json(
+    {
+      error:
+        error instanceof z.ZodError
+          ? error.errors.map((e) => e.message).join(", ")
+          : error.message || "Error interno del servidor",
+    },
+    { status: error instanceof z.ZodError ? 400 : 500 }
+  );
+}
+
 // GET: Obtener cliente por ID
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es inválido o no está presente" },
-        { status: 400 }
-      );
-    }
+    checkClientId(params.id);
 
     const client = await prisma.clientProfile.findUnique({
       where: { profile_id: params.id },
@@ -40,23 +59,17 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     return NextResponse.json(client, { status: 200 });
   } catch (error) {
-    console.error("Error al obtener cliente:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleServerError(error);
   }
 }
 
 // PUT: Actualizar cliente por ID
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es inválido o no está presente" },
-        { status: 400 }
-      );
-    }
+    checkClientId(params.id);
 
     const body = await req.json();
     const validatedData = clientUpdateSchema.parse(body);
@@ -79,31 +92,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error al actualizar cliente:", error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors.map((e) => e.message).join(", ") },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleServerError(error);
   }
 }
 
 // DELETE: Eliminar cliente por ID
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    if (!params.id) {
-      return NextResponse.json(
-        { error: "El ID del cliente es inválido o no está presente" },
-        { status: 400 }
-      );
-    }
+    checkClientId(params.id);
 
     const client = await prisma.clientProfile.findUnique({
       where: { profile_id: params.id },
@@ -129,10 +128,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error al eliminar cliente:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return handleServerError(error);
   }
 }

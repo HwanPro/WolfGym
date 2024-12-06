@@ -31,5 +31,5 @@
     "src/types/**/*.ts",
     "components/ProtectedRoute.js"
   ],
-  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "dist"]
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx", "dist",".next"]
 }

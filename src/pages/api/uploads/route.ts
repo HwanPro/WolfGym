@@ -13,13 +13,13 @@ const upload = multer({
   }),
 });
 
-// Middleware de `next-connect`
+// Middleware de `next-connect` con tipado explícito
 const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
-  onError: (err, req, res) => {
+  onError: (err: Error, req: NextApiRequest, res: NextApiResponse) => {
     console.error(err.stack);
     res.status(500).end("Error en el servidor");
   },
-  onNoMatch: (req, res) => {
+  onNoMatch: (req: NextApiRequest, res: NextApiResponse) => {
     res.status(405).end(`Método ${req.method} no permitido`);
   },
 });
@@ -42,31 +42,3 @@ const runMiddleware = (
     });
   });
 };
-
-// Endpoint POST para manejar la subida
-apiRoute.post(async (req, res) => {
-  try {
-    // Ejecutar el middleware de multer
-    await runMiddleware(req, res, uploadMiddleware);
-
-    // Extraer el archivo subido
-    const file = (req as any).file;
-    if (!file) {
-      return res.status(400).json({ error: "Archivo no subido" });
-    }
-
-    // Responder con la ruta del archivo
-    res.status(200).json({ filePath: `/uploads/images/${file.filename}` });
-  } catch (error) {
-    res.status(500).json({ error: "Error al subir el archivo" });
-  }
-});
-
-// Deshabilitar el analizador de cuerpo (bodyParser)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-export default apiRoute;

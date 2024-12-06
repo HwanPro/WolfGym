@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const userId: string = token.id;
+    const userId: string = token.id as string;
     console.log("userId:", userId);
 
     const client = await prisma.clientProfile.findUnique({
